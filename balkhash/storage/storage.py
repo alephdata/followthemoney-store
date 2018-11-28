@@ -2,11 +2,12 @@ import abc
 
 from normality import slugify
 
-from balkhash.settings import BUCKET_POSTFIX
-
 
 class Storage(object):
     __metaclass__ = abc.ABCMeta
+
+    def __init__(self, bucket_postfix=None):
+        self. bucket_postfix = bucket_postfix
 
     @abc.abstractmethod
     def create_dataset(name, public=False):
@@ -37,6 +38,9 @@ class Storage(object):
         pass
 
     def generate_bucketname(self, dataset_name):
-        dataset_name = slugify(dataset_name)
-        bucketname = "{0}.{1}".format(dataset_name, BUCKET_POSTFIX)
+        if self.bucket_postfix:
+            bucketname = "{0}-{1}".format(dataset_name, self.bucket_postfix)
+        else:
+            bucketname = dataset_name
+        bucketname = slugify(bucketname)
         return bucketname

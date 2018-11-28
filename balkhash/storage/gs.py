@@ -13,8 +13,8 @@ log = logging.getLogger(__name__)
 class GoogleStorage(Storage):
     TIMEOUT = 84600
 
-    def __init__(self):
-        super(GoogleStorage, self).__init__()
+    def __init__(self, **kwargs):
+        super(GoogleStorage, self).__init__(**kwargs)
         self.client = Client()
 
     def create_dataset(self, name, public=False):
