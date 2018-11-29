@@ -25,20 +25,21 @@ class GoogleStorage(Storage):
         if bucket is None:
             bucket = self.client.create_bucket(bucket_name)
 
-        policy = {
-            "origin": ['*'],
-            "method": ['GET'],
-            "responseHeader": [
-                'Accept-Ranges',
-                'Content-Encoding',
-                'Content-Length',
-                'Content-Range'
-            ],
-            "maxAgeSeconds": self.TIMEOUT
-        }
-        bucket.cors = [policy]
-        bucket.update()
+            policy = {
+                "origin": ['*'],
+                "method": ['GET'],
+                "responseHeader": [
+                    'Accept-Ranges',
+                    'Content-Encoding',
+                    'Content-Length',
+                    'Content-Range'
+                ],
+                "maxAgeSeconds": self.TIMEOUT
+            }
+            bucket.cors = [policy]
+            bucket.update()
         if public:
+            # ToDo: Warn if existing bucket is private; just to be safe?
             bucket.make_public(recursive=True, future=True)
         dataset = Dataset(name, self, bucket)
         return dataset
