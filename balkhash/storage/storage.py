@@ -6,41 +6,28 @@ from normality import slugify
 class Storage(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, bucket_postfix=None):
-        self. bucket_postfix = bucket_postfix
-
-    @abc.abstractmethod
-    def create_dataset(name, public=False):
+    def __init__(self):
         pass
 
     @abc.abstractmethod
-    def exists(self, bucket, key):
+    def create_dataset(name):
         pass
 
     @abc.abstractmethod
-    def get(self, bucket, key):
+    def get(self, namespace, key):
         pass
 
     @abc.abstractmethod
-    def put(self, bucket, key, val):
+    def delete(self, namespace, key):
         pass
 
     @abc.abstractmethod
-    def list_blobs(self, bucket, prefix=None):
+    def put(self, namespace, key, val):
         pass
 
     @abc.abstractmethod
-    def get_blob_url(self, bucket, key):
+    def iterate(self, namespace, prefix=None):
         pass
 
-    @abc.abstractmethod
-    def get_bucket_url(self, bucket):
-        pass
-
-    def generate_bucketname(self, dataset_name):
-        if self.bucket_postfix:
-            bucketname = "{0}-{1}".format(dataset_name, self.bucket_postfix)
-        else:
-            bucketname = dataset_name
-        bucketname = slugify(bucketname)
-        return bucketname
+    def generate_namespace_name(self, name):
+        return slugify(name).encode('utf-8')

@@ -1,6 +1,6 @@
-from balkhash.storage import GoogleStorage
+from balkhash.storage import LevelDBStorage
 
 
-def init(bucket_postfix=None):
-    storage = GoogleStorage(bucket_postfix=bucket_postfix)
+def init():
+    storage = LevelDBStorage()
     return storage

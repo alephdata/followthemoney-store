@@ -1,6 +1,7 @@
 # Balkhash
 
-This library provides methods to store, fetch and list raw data and entities from datasets in cloud storage buckets.
+This library provides methods to store, fetch and list entities from datasets stored in local or remote key-value
+stores.
 
 ## Usage Example
 
@@ -8,16 +9,10 @@ This library provides methods to store, fetch and list raw data and entities fro
 import balkhash
 
 storage = balkhash.init(...)
-dataset = storage.create_dataset(name="US-OFAC", public=True)
-dataset.put(key=entity["id"], val=json.dumps(entity), context="entities")
+dataset = storage.create_dataset(name="US-OFAC")
+dataset.put(key=entity["id"], val=json.dumps(entity))
 
 ```
-
-## ToDo
-
-- Signed URL for blobs
-- Upload files and content-type other than plain text
-- Retry with back-off when rate limit exceeded for creating buckets
 
 ## License
 MIT

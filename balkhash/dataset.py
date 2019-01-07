@@ -1,26 +1,25 @@
 class Dataset(object):
-    def __init__(self, name, storage, bucket):
+    def __init__(self, name, storage, namespace):
         self.name = name
         self.storage = storage
-        self.bucket = bucket
-        pass
+        self.namespace = namespace
 
-    def exists(self, key, context):
-        key = context + "/" + key
-        return self.storage.exists(self.bucket, key)
+    def make_key(self, key, fragment_id):
+        if fragment_id:
+            return key + b'-v-' + fragment_id
+        return key
 
-    def get(self, key, context):
-        key = context + "/" + key
-        return self.storage.get(self.bucket, key)
+    def get(self, key, fragment_id=None):
+        key = self.make_key(key, fragment_id)
+        return self.storage.get(self.namespace, key)
 
-    def put(self, key, val, context):
-        key = context + "/" + key
-        return self.storage.put(self.bucket, key, val)
+    def put(self, key, val, fragment_id=None):
+        key = self.make_key(key, fragment_id)
+        return self.storage.put(self.namespace, key, val)
 
-    def list_blobs(self, context):
-        prefix = context + "/"
-        return self.storage.list_keys(self.bucket, prefix)
+    def iterate(self, prefix=None):
+        return self.storage.iterate(self.namespace, prefix=prefix)
 
-    def get_blob_url(self, key, context):
-        key = context + "/" + key
-        return self.storage.get_blob_url(self.bucket, key)
+    def delete(self, key, fragment_id=None):
+        key = self.make_key(key, fragment_id)
+        return self.storage.delete(self.namespace, key)

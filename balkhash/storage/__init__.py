@@ -1,3 +1,3 @@
-from .gs import GoogleStorage
+from .leveldb import LevelDBStorage
 
-__all__ = [GoogleStorage, ]
+__all__ = [LevelDBStorage, ]
