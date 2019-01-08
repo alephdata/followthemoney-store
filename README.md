@@ -14,5 +14,10 @@ dataset.put(key=entity["id"], val=json.dumps(entity))
 
 ```
 
+## ToDo
+
+- Proper serialization and deserialization based on backend
+- Use entity hierarchy while storing fragments on Google Datastore
+
 ## License
 MIT
