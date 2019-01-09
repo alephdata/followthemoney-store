@@ -9,6 +9,7 @@ plyvel = "*"
 [dev-packages]
 "flake8" = "*"
 pytest = "*"
+pytest-env = "*"
 
 [requires]
 python_version = "3.6"

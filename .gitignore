@@ -117,3 +117,4 @@ dmypy.json
 # dev directories
 .vscode/
 notebooks/
+balkhashdb/

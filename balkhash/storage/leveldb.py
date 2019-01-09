@@ -3,33 +3,31 @@ import os
 
 import plyvel
 
-from balkhash.dataset import Dataset
-from .storage import Storage
+from .storage import Storage, StorageClient
 
 
 log = logging.getLogger(__name__)
 DB_PATH = os.getenv("BALKHASH_LOCAL_DB", "balkhashdb")
 
 
+class LevelDBStorageClient(StorageClient):
+    def __init__(self, namespace):
+        db = plyvel.DB(DB_PATH, create_if_missing=True)
+        self.client = db.prefixed_db(namespace)
+        super().__init__(namespace)
+
+    def get(self, key):
+        return self.client.get(key)
+
+    def delete(self, key):
+        return self.client.delete(key)
+
+    def put(self, key, val):
+        return self.client.put(key, val)
+
+    def iterate(self, prefix=None):
+        return self.client.iterator(prefix=prefix)
+
+
 class LevelDBStorage(Storage):
-    def __init__(self):
-        pass
-
-    def create_dataset(self, name, db_path=None):
-        db_path = db_path or DB_PATH
-        db = plyvel.DB(db_path, create_if_missing=True)
-        ns_name = self.generate_namespace_name(name)
-        namespace = db.prefixed_db(ns_name)
-        return Dataset(name, self, namespace)
-
-    def get(self, namespace, key):
-        return namespace.get(key)
-
-    def delete(self, namespace, key):
-        return namespace.delete(key)
-
-    def put(self, namespace, key, val):
-        return namespace.put(key, val)
-
-    def iterate(self, namespace, prefix=None):
-        return namespace.iterator(prefix=prefix)
+    CLIENT_CLASS = LevelDBStorageClient
