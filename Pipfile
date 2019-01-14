@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 plyvel = "*"
+google-cloud-datastore = "*"
 
 [dev-packages]
 "flake8" = "*"
