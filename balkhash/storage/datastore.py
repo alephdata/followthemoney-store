@@ -43,4 +43,6 @@ class GoogleDatastoreStorageClient(StorageClient):
 
 
 class GoogleDatastoreStorage(Storage):
-    CLIENT_CLASS = GoogleDatastoreStorageClient
+    @property
+    def client_class(self):
+        return GoogleDatastoreStorageClient

@@ -53,4 +53,6 @@ class LevelDBStorageClient(StorageClient):
 
 
 class LevelDBStorage(Storage):
-    CLIENT_CLASS = LevelDBStorageClient
+    @property
+    def client_class(self):
+        return LevelDBStorageClient
