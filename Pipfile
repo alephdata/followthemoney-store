@@ -10,6 +10,7 @@ plyvel = "*"
 "flake8" = "*"
 pytest = "*"
 pytest-env = "*"
+balkhash = {editable = true,path = "."}
 
 [requires]
 python_version = "3.6"
