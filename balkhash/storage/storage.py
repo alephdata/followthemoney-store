@@ -28,15 +28,15 @@ class StorageClient(object):
         self.namespace = namespace
 
     @abc.abstractmethod
-    def get(self, namespace, key):
+    def get(self, namespace, key, fragment_id=None):
         pass
 
     @abc.abstractmethod
-    def delete(self, namespace, key):
+    def delete(self, namespace, key, fragment_id=None):
         pass
 
     @abc.abstractmethod
-    def put(self, namespace, key, val):
+    def put(self, namespace, key, entity, fragment_id=None):
         pass
 
     @abc.abstractmethod

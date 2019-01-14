@@ -1,5 +1,4 @@
 import shutil
-import os
 
 import balkhash
 
@@ -11,14 +10,18 @@ def test_leveldb():
     dataset = storage.create_dataset(name="TEST-US-OFAC")
     assert dataset.name == "TEST-US-OFAC"
 
-    dataset.put(b"key1", b"val1")
-    dataset.put(b"key3", b"val3")
-    dataset.put(b"key1", b"val2", fragment_id=b"2")
+    entity1 = {"name": "ent1"}
+    entity2 = {"name": "ent2"}
+    entity3 = {"name": "ent3"}
 
-    assert dataset.get(b"key1") == b"val1"
-    assert dataset.get(b"key1", fragment_id=b"2") == b"val2"
+    dataset.put("key1", entity1)
+    dataset.put("key3", entity3)
+    dataset.put("key1", entity2, fragment_id="2")
+
+    assert dataset.get("key1") == entity1
+    assert dataset.get("key1", fragment_id="2") == entity2
 
     assert len(list(dataset.iterate())) == 3
-    assert len(list(dataset.iterate(prefix=b"key1"))) == 2
+    assert len(list(dataset.iterate(prefix="key1"))) == 2
 
     shutil.rmtree(TEST_DB_PATH)

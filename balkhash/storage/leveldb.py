@@ -1,8 +1,10 @@
 import logging
 import os
+import json
 
 import plyvel
 
+from balkhash.utils import to_bytes
 from .storage import Storage, StorageClient
 
 
@@ -16,17 +18,38 @@ class LevelDBStorageClient(StorageClient):
         self.client = db.prefixed_db(namespace)
         super().__init__(namespace)
 
-    def get(self, key):
-        return self.client.get(key)
+    def _serialize(self, entity):
+        return json.dumps(entity).encode()
 
-    def delete(self, key):
+    def _deserialize(self, blob):
+        return json.loads(blob)
+
+    def _make_key(self, key, fragment_id):
+        if fragment_id:
+            key = key + '-v-' + fragment_id
+        return to_bytes(key)
+
+    def get(self, key, fragment_id=None):
+        key = self._make_key(key, fragment_id)
+        blob = self.client.get(key)
+        if blob:
+            print(blob)
+            return self._deserialize(blob)
+
+    def delete(self, key, fragment_id=None):
+        key = self._make_key(key, fragment_id)
         return self.client.delete(key)
 
-    def put(self, key, val):
-        return self.client.put(key, val)
+    def put(self, key, entity, fragment_id=None):
+        key = self._make_key(key, fragment_id)
+        entity = self._serialize(entity)
+        return self.client.put(key, entity)
 
     def iterate(self, prefix=None):
-        return self.client.iterator(prefix=prefix)
+        if prefix:
+            prefix = to_bytes(prefix)
+        for key, blob in self.client.iterator(prefix=prefix):
+            yield key.decode(), self._deserialize(blob)
 
 
 class LevelDBStorage(Storage):

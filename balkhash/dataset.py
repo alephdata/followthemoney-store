@@ -3,22 +3,14 @@ class Dataset(object):
         self.name = name
         self.storage_client = storage_client
 
-    def make_key(self, key, fragment_id):
-        if fragment_id:
-            return key + b'-v-' + fragment_id
-        return key
-
     def get(self, key, fragment_id=None):
-        key = self.make_key(key, fragment_id)
-        return self.storage_client.get(key)
+        return self.storage_client.get(key, fragment_id=fragment_id)
 
     def put(self, key, val, fragment_id=None):
-        key = self.make_key(key, fragment_id)
-        return self.storage_client.put(key, val)
+        return self.storage_client.put(key, val, fragment_id=fragment_id)
 
     def iterate(self, prefix=None):
         return self.storage_client.iterate(prefix=prefix)
 
     def delete(self, key, fragment_id=None):
-        key = self.make_key(key, fragment_id)
-        return self.storage_client.delete(key)
+        return self.storage_client.delete(key, fragment_id=fragment_id)
