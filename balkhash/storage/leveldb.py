@@ -22,7 +22,8 @@ class LevelDBStorageClient(StorageClient):
         return json.dumps(entity).encode()
 
     def _deserialize(self, blob):
-        return json.loads(blob)
+        # Python 3.5 and below don't accept binary input to json.loads
+        return json.loads(blob.decode())
 
     def _make_key(self, key, fragment_id):
         if fragment_id:
@@ -33,7 +34,6 @@ class LevelDBStorageClient(StorageClient):
         key = self._make_key(key, fragment_id)
         blob = self.client.get(key)
         if blob:
-            print(blob)
             return self._deserialize(blob)
 
     def delete(self, key, fragment_id=None):
