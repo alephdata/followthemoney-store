@@ -29,9 +29,9 @@ class GoogleDatastoreStorageClient(StorageClient):
     def put(self, key, entity, fragment_id=None):
         assert isinstance(entity, dict)
         key = self._make_key(key, fragment_id)
-        entity = datastore.Entity(key=key)
-        entity.update(entity)
-        return self.client.put(entity)
+        ent = datastore.Entity(key=key)
+        ent.update(entity)
+        return self.client.put(ent)
 
     def iterate(self, prefix=None):
         if prefix:

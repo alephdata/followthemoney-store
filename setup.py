@@ -26,8 +26,9 @@ setup(
     include_package_data=True,
     zip_safe=True,
     install_requires=[
-        'google-cloud-storage>=1.10.0',
-        'normality>=0.6.1'
+        'google-cloud-datastore>=1.7.3',
+        'normality>=0.6.1',
+        'plyvel>=1.0.5'
     ],
     tests_require=[
     ],
