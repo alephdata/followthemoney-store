@@ -38,4 +38,5 @@ class Dataset(ABC):
                     continue
                 yield entity
             entity = fragment
-        return entity
+        if entity is not None:
+            yield entity

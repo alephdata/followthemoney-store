@@ -30,9 +30,13 @@ setup(
         'google-cloud-datastore>=1.7.3',
         'normality>=0.6.1',
         'plyvel>=1.0.5',
-        'client>=7.0.0'
+        'click>=7.0.0'
     ],
-    tests_require=[
-    ],
-    entry_points={}
+    tests_require=[],
+    entry_points={
+        'console_scripts': [
+            'balkhash = balkhash.cli:cli',
+            'ftm-store = balkhash.cli:cli',
+        ]
+    }
 )

@@ -15,7 +15,7 @@ class LevelDBDataset(Dataset):
     def __init__(self, name):
         super(LevelDBDataset, self).__init__(name)
         db = plyvel.DB(self.PATH, create_if_missing=True)
-        self.client = db.prefixed_db(name)
+        self.client = db.prefixed_db(name.encode())
 
     def _make_key(self, entity_id, fragment):
         if entity_id is None:
@@ -33,7 +33,7 @@ class LevelDBDataset(Dataset):
 
     def delete(self, entity_id=None, fragment=None):
         prefix = self._make_key(entity_id, fragment)
-        for key, _ in self.client.iterator(prefix=prefix, include_value=False):
+        for key in self.client.iterator(prefix=prefix, include_value=False):
             self.client.delete(key)
 
     def put(self, entity, fragment=None):

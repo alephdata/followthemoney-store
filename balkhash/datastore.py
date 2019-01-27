@@ -3,7 +3,6 @@ from google.cloud import datastore
 
 from balkhash.dataset import Dataset
 
-
 KIND = 'Entity'
 log = logging.getLogger(__name__)
 
