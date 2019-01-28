@@ -31,15 +31,19 @@ class LevelDBDataset(Dataset):
         # Python 3.5 and below don't accept binary input to json.loads
         return json.loads(blob.decode())
 
+    def _encode(self, entity, fragment):
+        entity = self._entity_dict(entity)
+        key = self._make_key(entity.get('id'), fragment)
+        entity = self._serialize(entity)
+        return (key, entity)
+
     def delete(self, entity_id=None, fragment=None):
         prefix = self._make_key(entity_id, fragment)
         for key in self.client.iterator(prefix=prefix, include_value=False):
             self.client.delete(key)
 
     def put(self, entity, fragment=None):
-        entity = self._entity_dict(entity)
-        key = self._make_key(entity.get('id'), fragment)
-        entity = self._serialize(entity)
+        key, entity = self._encode(entity, fragment)
         return self.client.put(key, entity)
 
     def bulk(self, size=1000):
@@ -57,11 +61,8 @@ class LevelDBBulk(Bulk):
         self.dataset.put(entity, fragment=fragment)
 
     def flush(self):
-        # ds = self.dataset
-        # with ds.client.write_batch() as batch:
+        # with self.dataset.client.write_batch() as batch:
         #     for (entity, fragment) in self.buffer:
-        #         entity = ds._entity_dict(entity)
-        #         key = ds._make_key(entity.get('id'), fragment)
-        #         entity = ds._serialize(entity)
+        #         key, entity = self.dataset._encode(entity, fragment)
         #         batch.put(key, entity)
         pass

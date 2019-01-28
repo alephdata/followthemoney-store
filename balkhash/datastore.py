@@ -1,7 +1,8 @@
+import json
 import logging
 from google.cloud import datastore
 
-from balkhash.dataset import Dataset
+from balkhash.dataset import Dataset, Bulk
 
 KIND = 'Entity'
 log = logging.getLogger(__name__)
@@ -19,21 +20,53 @@ class GoogleDatastoreDataset(Dataset):
         if entity_id:
             return self.client.key(KIND, entity_id)
 
-    def delete(self, entity_id=None, fragment=None):
-        ancestor = self._make_key(entity_id, fragment)
-        query = self.client.query(kind=KIND, ancestor=ancestor)
-        for entity in query.fetch():
-            self.client.delete(entity.key)
-
-    def put(self, entity, fragment='default'):
+    def _encode(self, entity, fragment):
         entity = self._entity_dict(entity)
         key = self._make_key(entity.get('id'), fragment)
-        ent = datastore.Entity(key=key)
-        ent.update(entity)
-        return self.client.put(ent)
+        exclude = ('properties', 'context')
+        ent = datastore.Entity(key=key, exclude_from_indexes=exclude)
+        ent['id'] = entity.pop('id')
+        ent['schema'] = entity.pop('schema')
+        ent['properties'] = json.dumps(entity.pop('properties', {}))
+        ent['context'] = json.dumps(entity)
+        return ent
+
+    def delete(self, entity_id=None, fragment=None):
+        ancestor = self._make_key(entity_id, fragment)
+        query = self.client.query(kind='Fragment', ancestor=ancestor)
+        batch = []
+        for entity in query.fetch():
+            batch.append(entity.key)
+            if len(batch) >= 500:
+                self.client.delete_multi(batch)
+                batch = []
+        if len(batch):
+            self.client.delete_multi(batch)
+
+    def put(self, entity, fragment='default'):
+        entity = self._encode(entity, fragment)
+        return self.client.put(entity)
+
+    def bulk(self, size=500):
+        return GoogleDatastoreBulk(self, size)
 
     def fragments(self, entity_id=None, fragment=None):
         ancestor = self._make_key(entity_id, fragment)
-        query = self.client.query(kind=KIND, ancestor=ancestor)
+        query = self.client.query(kind='Fragment', ancestor=ancestor)
         for entity in query.fetch():
-            yield dict(entity.items())
+            data = json.loads(entity['context'])
+            data['id'] = entity['id']
+            data['schema'] = entity['schema']
+            data['properties'] = json.loads(entity['properties'])
+            yield data
+
+
+class GoogleDatastoreBulk(Bulk):
+
+    def flush(self):
+        entities = [self.dataset._encode(e, f) for (e, f) in self.buffer]
+        if not len(entities):
+            return
+        if len(entities) == 1:
+            self.dataset.client.put(entities[0])
+        self.dataset.client.put_multi(entities)

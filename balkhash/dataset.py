@@ -55,8 +55,9 @@ class Bulk(ABC):
 
     def put(self, entity, fragment=None):
         self.buffer.append((entity, fragment))
-        if len(self.buffer) > self.size:
+        if len(self.buffer) >= self.size:
             self.flush()
+            self.buffer = []
 
     @abstractmethod
     def flush(self):
