@@ -4,7 +4,7 @@ import plyvel
 import logging
 
 from balkhash.utils import to_bytes
-from balkhash.dataset import Dataset
+from balkhash.dataset import Dataset, Bulk
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +42,26 @@ class LevelDBDataset(Dataset):
         entity = self._serialize(entity)
         return self.client.put(key, entity)
 
+    def bulk(self, size=1000):
+        return LevelDBBulk(self, size)
+
     def fragments(self, entity_id=None, fragment=None):
         prefix = self._make_key(entity_id, fragment)
         for key, blob in self.client.iterator(prefix=prefix):
             yield self._deserialize(blob)
+
+
+class LevelDBBulk(Bulk):
+
+    def put(self, entity, fragment='default'):
+        self.dataset.put(entity, fragment=fragment)
+
+    def flush(self):
+        # ds = self.dataset
+        # with ds.client.write_batch() as batch:
+        #     for (entity, fragment) in self.buffer:
+        #         entity = ds._entity_dict(entity)
+        #         key = ds._make_key(entity.get('id'), fragment)
+        #         entity = ds._serialize(entity)
+        #         batch.put(key, entity)
+        pass

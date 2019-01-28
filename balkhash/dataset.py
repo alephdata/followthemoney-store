@@ -16,6 +16,10 @@ class Dataset(ABC):
         pass
 
     @abstractmethod
+    def bulk(self, size=1000):
+        pass
+
+    @abstractmethod
     def fragments(self, entity_id=None, fragment=None):
         pass
 
@@ -40,3 +44,20 @@ class Dataset(ABC):
             entity = fragment
         if entity is not None:
             yield entity
+
+
+class Bulk(ABC):
+
+    def __init__(self, dataset, size):
+        self.dataset = dataset
+        self.size = size
+        self.buffer = []
+
+    def put(self, entity, fragment=None):
+        self.buffer.append((entity, fragment))
+        if len(self.buffer) > self.size:
+            self.flush()
+
+    @abstractmethod
+    def flush(self):
+        pass

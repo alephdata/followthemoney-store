@@ -4,6 +4,8 @@ import click
 import logging
 from itertools import count
 
+log = logging.getLogger('balkhash')
+
 
 @click.group(help="Store FollowTheMoney object data")
 def cli():
@@ -21,13 +23,17 @@ def get_dataset(name):
 @click.option('-f', '--file', type=click.File('r'), default='-')  # noqa
 def write(dataset, file):
     dataset = get_dataset(dataset)
+    bulk = dataset.bulk()
     try:
         for idx in count(1):
             line = file.readline()
             if not line:
                 break
             entity = json.loads(line)
-            dataset.put(entity, fragment=str(idx))
+            bulk.put(entity, fragment=str(idx))
+            if idx % 1000 == 0:
+                log.info("Write: %s entities", idx)
+        bulk.flush()
     except BrokenPipeError:
         pass
 
