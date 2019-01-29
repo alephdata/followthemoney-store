@@ -1,7 +1,8 @@
-from balkhash.storage import LevelDBStorage, GoogleDatastoreStorage
+from balkhash.leveldb import LevelDBDataset
+from balkhash.datastore import GoogleDatastoreDataset
 
 
-def init(remote=False):
+def init(name, remote=False):
     if remote:
-        return GoogleDatastoreStorage()
-    return LevelDBStorage()
+        return GoogleDatastoreDataset(name)
+    return LevelDBDataset(name)

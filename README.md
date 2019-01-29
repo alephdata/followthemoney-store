@@ -8,16 +8,11 @@ stores.
 ```python
 import balkhash
 
-storage = balkhash.init(...)
-dataset = storage.create_dataset(name="US-OFAC")
-dataset.put(key=entity["id"], val=json.dumps(entity))
-
+dataset = balkhash.init("US-OFAC")
+dataset.put(entity, fragment='1')
 ```
 
 ## ToDo
 
 - Proper serialization and deserialization based on backend
 - Use entity hierarchy while storing fragments on Google Datastore
-
-## License
-MIT

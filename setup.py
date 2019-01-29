@@ -17,7 +17,7 @@ setup(
         'Programming Language :: Python :: 3.6'
     ],
     keywords='storage',
-    author='Journalism Development Network',
+    author='Organized Crime and Corruption Reporting Project',
     author_email='data@occrp.org',
     url='http://github.com/alephdata/balkhash',
     license='MIT',
@@ -26,11 +26,17 @@ setup(
     include_package_data=True,
     zip_safe=True,
     install_requires=[
+        'followthemoney>=1.5.4',
         'google-cloud-datastore>=1.7.3',
         'normality>=0.6.1',
-        'plyvel>=1.0.5'
+        'plyvel>=1.0.5',
+        'click>=7.0.0'
     ],
-    tests_require=[
-    ],
-    entry_points={}
+    tests_require=[],
+    entry_points={
+        'console_scripts': [
+            'balkhash = balkhash.cli:cli',
+            'ftm-store = balkhash.cli:cli',
+        ]
+    }
 )

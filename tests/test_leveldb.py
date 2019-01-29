@@ -6,8 +6,7 @@ TEST_DB_PATH = 'testdb'
 
 
 def test_leveldb():
-    storage = balkhash.init()
-    dataset = storage.create_dataset(name="TEST-US-OFAC")
+    dataset = balkhash.init("TEST-US-OFAC")
     assert dataset.name == "TEST-US-OFAC"
 
     entity1 = {"name": "ent1"}
