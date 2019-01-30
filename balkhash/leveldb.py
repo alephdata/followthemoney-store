@@ -1,8 +1,8 @@
-import os
 import json
 import plyvel
 import logging
 
+from balkhash import settings
 from balkhash.utils import to_bytes
 from balkhash.dataset import Dataset, Bulk
 
@@ -10,11 +10,10 @@ log = logging.getLogger(__name__)
 
 
 class LevelDBDataset(Dataset):
-    PATH = os.getenv("BALKHASH_LEVELDB", "balkhashdb")
 
     def __init__(self, name):
         super(LevelDBDataset, self).__init__(name)
-        db = plyvel.DB(self.PATH, create_if_missing=True)
+        db = plyvel.DB(settings.LEVELDB_PATH, create_if_missing=True)
         self.client = db.prefixed_db(name.encode())
 
     def _make_key(self, entity_id, fragment):

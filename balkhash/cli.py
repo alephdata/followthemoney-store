@@ -15,7 +15,7 @@ def cli():
 
 def get_dataset(name):
     import balkhash
-    return balkhash.init(name)
+    return balkhash.init(name, remote=False)
 
 
 @cli.command('write', help="Store entities")
