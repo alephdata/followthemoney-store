@@ -4,6 +4,8 @@ import click
 import logging
 from itertools import count
 
+from balkhash.googlestorage import upload_to_bucket
+
 log = logging.getLogger('balkhash')
 
 
@@ -49,6 +51,20 @@ def iterate(dataset, file, entity):
         file.write(entity)
         file.write('\n')
         file.flush()
+
+
+@cli.command('upload', help="Upload entities to a bucket")
+@click.option('-d', '--dataset', required=True)
+@click.option('-f', '--file', required=True)  # noqa
+@click.option('-e', '--entity')
+def upload(dataset, file, entity):
+    dataset = get_dataset(dataset)
+    for entity in dataset.iterate(entity_id=entity):
+        entity = json.dumps(entity.to_dict())
+        file.write(entity)
+        file.write('\n')
+        file.flush()
+    upload_to_bucket(dataset.name, file.name)
 
 
 @cli.command('delete', help="Delete entities")
