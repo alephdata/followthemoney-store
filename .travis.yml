@@ -1,9 +1,17 @@
-dist: xenial
 language: python
 python:
-    - "3.5"
-    - "3.7"
+    - "3.6"
+
+install:
+  - pip install coverage twine pytest
+  - "pip install -e ."
+
 script:
-    - "pip install pipenv"
-    - "pipenv install --dev -e ."
-    - "pipenv run -- pytest"
+  - pytest
+
+after_success:
+  # push tag as well
+  - if [[ $TRAVIS_TAG = $TRAVIS_BRANCH ]]; then
+      python setup.py sdist bdist_wheel ;
+      twine upload dist/* ;
+    fi

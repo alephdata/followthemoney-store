@@ -4,18 +4,19 @@ import click
 import logging
 from itertools import count
 
+from balkhash.leveldb import LevelDBDataset
+
 log = logging.getLogger('balkhash')
+
+
+def get_dataset(name):
+    return LevelDBDataset(name)
 
 
 @click.group(help="Store FollowTheMoney object data")
 def cli():
     fmt = '%(name)s [%(levelname)s] %(message)s'
     logging.basicConfig(stream=sys.stderr, level=logging.INFO, format=fmt)
-
-
-def get_dataset(name):
-    import balkhash
-    return balkhash.init(name, remote=False)
 
 
 @cli.command('write', help="Store entities")
@@ -35,13 +36,13 @@ def write(dataset, file):
                 log.info("Write: %s entities", idx)
         bulk.flush()
     except BrokenPipeError:
-        pass
+        raise click.Abort()
 
 
 @cli.command('iterate', help="Iterate entities")
 @click.option('-d', '--dataset', required=True)
 @click.option('-f', '--file', type=click.File('w'), default='-')  # noqa
-@click.option('-e', '--entity')
+@click.option('-e', '--entity', default=None)
 def iterate(dataset, file, entity):
     dataset = get_dataset(dataset)
     for entity in dataset.iterate(entity_id=entity):
@@ -53,7 +54,7 @@ def iterate(dataset, file, entity):
 
 @cli.command('delete', help="Delete entities")
 @click.option('-d', '--dataset', required=True)
-@click.option('-e', '--entity')
+@click.option('-e', '--entity', default=None)
 def delete(dataset, entity):
     dataset = get_dataset(dataset)
     dataset.delete(entity_id=entity)
