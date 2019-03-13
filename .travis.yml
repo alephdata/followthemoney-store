@@ -2,6 +2,9 @@ language: python
 python:
     - "3.6"
 
+services:
+  - postgresql
+
 install:
   - pip install coverage twine pytest
   - "pip install -e ."
