@@ -27,6 +27,7 @@ setup(
     zip_safe=True,
     install_requires=[
         'followthemoney>=1.5.4',
+        'grpcio',
         'google-cloud-datastore>=1.7.3',
         'normality>=0.6.1',
         'plyvel>=1.0.5',
