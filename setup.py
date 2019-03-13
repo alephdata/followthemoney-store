@@ -30,7 +30,9 @@ setup(
         'google-cloud-datastore>=1.7.3',
         'normality>=0.6.1',
         'plyvel>=1.0.5',
-        'click>=7.0.0'
+        'click>=7.0.0',
+        'psycopg2-binary>=2.7.7',
+        'SQLAlchemy>=1.3.1',
     ],
     tests_require=[],
     entry_points={
