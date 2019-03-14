@@ -1,8 +1,18 @@
-from balkhash.leveldb import LevelDBDataset
-from balkhash.datastore import GoogleDatastoreDataset
+BACKENDS = ('POSTGRESQL', 'DATASTORE', 'LEVELDB',)
 
 
-def init(name, remote=False):
+def init(name, backend='LEVELDB', remote=False):
     if remote:
+        from balkhash.datastore import GoogleDatastoreDataset
         return GoogleDatastoreDataset(name)
-    return LevelDBDataset(name)
+    else:
+        assert backend in BACKENDS, "Please specify a supported backend."
+        if backend == "POSTGRESQL":
+            from balkhash.postgres import PostgresDataset
+            return PostgresDataset(name)
+        elif backend == "DATASTORE":
+            from balkhash.datastore import GoogleDatastoreDataset
+            return GoogleDatastoreDataset(name)
+        else:
+            from balkhash.leveldb import LevelDBDataset
+            return LevelDBDataset(name)

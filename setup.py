@@ -27,12 +27,22 @@ setup(
     zip_safe=True,
     install_requires=[
         'followthemoney>=1.5.4',
-        'grpcio',
-        'google-cloud-datastore>=1.7.3',
         'normality>=0.6.1',
-        'plyvel>=1.0.5',
-        'click>=7.0.0'
+        'click>=7.0.0',
     ],
+    extras_require={
+        'sql': [
+            'psycopg2-binary>=2.7.7',
+            'SQLAlchemy>=1.3.1',
+        ],
+        'google': [
+            'google-cloud-datastore>=1.7.3',
+            'grpcio',
+        ],
+        'leveldb': [
+            'plyvel>=1.0.5',
+        ]
+    },
     tests_require=[],
     entry_points={
         'console_scripts': [
