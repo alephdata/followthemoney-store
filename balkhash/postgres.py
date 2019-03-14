@@ -41,14 +41,15 @@ class PostgresDataset(Dataset):
     def delete(self, entity_id=None, fragment=None):
         with self.engine.begin() as conn:
             table = self.table
+            statement = table.delete()
             if entity_id:
                 if fragment:
-                    statement = table.delete(and_(
+                    statement = statement.where(and_(
                         table.c.id == entity_id,
                         table.c.fragment == fragment
                     ))
                 else:
-                    statement = table.delete(table.c.id == entity_id)
+                    statement = statement.where(table.c.id == entity_id)
             conn.execute(statement)
 
     def put(self, entity, fragment=None):
@@ -71,23 +72,22 @@ class PostgresDataset(Dataset):
         return PostgresBulk(self, size)
 
     def fragments(self, entity_id=None, fragment=None):
-        with self.engine.begin() as conn:
-            table = self.table
-            statement = table.select()
-            if entity_id:
-                if fragment:
-                    statement = statement.where(and_(
-                        table.c.id == entity_id,
-                        table.c.fragment == fragment
-                    ))
-                else:
-                    statement = statement.where(table.c.id == entity_id)
-            entities = conn.execute(statement)
-            for ent in entities:
-                ent = dict(ent)
-                if ent["fragment"] == "":
-                    ent["fragment"] = None
-                yield ent
+        table = self.table
+        statement = table.select()
+        if entity_id:
+            if fragment:
+                statement = statement.where(and_(
+                    table.c.id == entity_id,
+                    table.c.fragment == fragment
+                ))
+            else:
+                statement = statement.where(table.c.id == entity_id)
+        entities = self.engine.execute(statement)
+        for ent in entities:
+            ent = dict(ent)
+            if ent["fragment"] == "":
+                ent["fragment"] = None
+            yield ent
 
 
 class PostgresBulk(Bulk):
