@@ -7,7 +7,7 @@ addons:
 
 install:
   - pip install coverage twine pytest
-  - "pip install -e ."
+  - pip install -e ".[leveldb]" ".[sql]"
 
 script:
   - pytest
