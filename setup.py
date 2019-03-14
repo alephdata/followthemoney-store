@@ -37,6 +37,7 @@ setup(
         ],
         'google': [
             'google-cloud-datastore>=1.7.3',
+            'grpcio',
         ],
         'leveldb': [
             'plyvel>=1.0.5',
