@@ -4,13 +4,12 @@ import click
 import logging
 from itertools import count
 
-from balkhash.leveldb import LevelDBDataset
-
 log = logging.getLogger('balkhash')
 
 
 def get_dataset(name):
-    return LevelDBDataset(name)
+    from balkhash import init
+    return init(name)
 
 
 @click.group(help="Store FollowTheMoney object data")

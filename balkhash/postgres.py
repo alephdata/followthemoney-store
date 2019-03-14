@@ -1,19 +1,18 @@
 import logging
 import datetime
-
-
 from sqlalchemy import Column, DateTime, String, UniqueConstraint
 from sqlalchemy import Table, MetaData
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import create_engine
 from sqlalchemy.dialects import postgresql
-from sqlalchemy import and_
 
 from balkhash import settings
 from balkhash.dataset import Dataset, Bulk
 
-
 log = logging.getLogger(__name__)
+# We have to cast null fragment values to "" to make the
+# UniqueConstraint work
+EMPTY = ''
 
 
 class PostgresDataset(Dataset):
@@ -23,40 +22,32 @@ class PostgresDataset(Dataset):
         self.engine = create_engine(settings.DATABASE_URI)
         self.table_name = name
         meta = MetaData(self.engine)
-        meta.reflect()
-        self.table = Table(
-            name, meta,
-            Column('id', String(60)),
-            # We have to cast null fragment values to "" to make the
-            # UniqueConstraint work
-            Column('fragment', String(60), nullable=False, default=""),
+        self.table = Table(name, meta,
+            Column('id', String(128)),
+            Column('fragment', String(128), nullable=False, default=EMPTY),
             Column('properties', postgresql.JSONB),
-            Column('schema', String(32)),
+            Column('schema', String(128)),
             Column('timestamp', DateTime, default=datetime.datetime.utcnow),
             UniqueConstraint('id', 'fragment'),
             extend_existing=True
         )
-        meta.create_all(self.engine)
+        self.table.create(bind=self.engine, checkfirst=True)
 
     def delete(self, entity_id=None, fragment=None):
         with self.engine.begin() as conn:
             table = self.table
             statement = table.delete()
-            if entity_id:
-                if fragment:
-                    statement = statement.where(and_(
-                        table.c.id == entity_id,
-                        table.c.fragment == fragment
-                    ))
-                else:
-                    statement = statement.where(table.c.id == entity_id)
+            if entity_id is not None:
+                statement = statement.where(table.c.id == entity_id)
+                if fragment is not None:
+                    statement = statement.where(table.c.fragment == fragment)
             conn.execute(statement)
 
     def put(self, entity, fragment=None):
         with self.engine.begin() as conn:
             upsert_statement = insert(self.table).values(
                 id=entity['id'],
-                fragment=fragment or "",
+                fragment=fragment or EMPTY,
                 properties=entity["properties"],
                 schema=entity["schema"],
             ).on_conflict_do_update(
@@ -74,18 +65,19 @@ class PostgresDataset(Dataset):
     def fragments(self, entity_id=None, fragment=None):
         table = self.table
         statement = table.select()
-        if entity_id:
-            if fragment:
-                statement = statement.where(and_(
-                    table.c.id == entity_id,
-                    table.c.fragment == fragment
-                ))
-            else:
-                statement = statement.where(table.c.id == entity_id)
-        entities = self.engine.execute(statement)
+        if entity_id is not None:
+            statement = statement.where(table.c.id == entity_id)
+            if fragment is not None:
+                statement = statement.where(table.c.fragment == fragment)
+        statement = statement.order_by(table.c.id)
+        statement = statement.order_by(table.c.fragment)
+        conn = self.engine.connect()
+        conn = conn.execution_options(stream_results=True)
+        entities = conn.execute(statement)
         for ent in entities:
             ent = dict(ent)
-            if ent["fragment"] == "":
+            ent.pop('timestamp', None)
+            if ent["fragment"] == EMPTY:
                 ent["fragment"] = None
             yield ent
 
@@ -98,7 +90,7 @@ class PostgresBulk(Bulk):
             values = [
                 {
                     "id": ent['id'],
-                    "fragment": frag or "",
+                    "fragment": frag or EMPTY,
                     "properties": ent["properties"],
                     "schema": ent["schema"]
                 } for (ent, frag) in self.buffer
