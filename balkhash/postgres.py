@@ -17,13 +17,14 @@ EMPTY = ''
 
 class PostgresDataset(Dataset):
 
-    def __init__(self, name):
+    def __init__(self, name, database_uri=None):
         super(PostgresDataset, self).__init__(name)
-        self.engine = create_engine(settings.DATABASE_URI)
+        database_uri = database_uri or settings.DATABASE_URI
+        self.engine = create_engine(database_uri)
         self.table_name = name
         meta = MetaData(self.engine)
         self.table = Table(name, meta,
-            Column('id', String(128)),
+            Column('id', String(128)),  # noqa
             Column('fragment', String(128), nullable=False, default=EMPTY),
             Column('properties', postgresql.JSONB),
             Column('schema', String(128)),
@@ -103,4 +104,4 @@ class PostgresBulk(Bulk):
                     schema=insert_statement.excluded.schema,
                 )
             )
-            return conn.execute(upsert_statement)
+            conn.execute(upsert_statement)

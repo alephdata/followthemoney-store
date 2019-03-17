@@ -48,6 +48,9 @@ setup(
         'console_scripts': [
             'balkhash = balkhash.cli:cli',
             'ftm-store = balkhash.cli:cli',
+        ],
+        'memorious.operations': [
+            'balkhash_put = balkhash.memorious:balkhash_put',
         ]
     }
 )

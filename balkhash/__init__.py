@@ -1,10 +1,10 @@
 from balkhash import settings
 
-BACKENDS = ('POSTGRESQL', 'DATASTORE', 'LEVELDB',)
-
 
 def init(name, backend=settings.BACKEND):
-    assert backend in BACKENDS, "Please specify a supported backend."
+    backend = backend.upper()
+    assert backend in settings.BACKENDS, \
+        "Please specify a supported backend."
     if backend == "POSTGRESQL":
         from balkhash.postgres import PostgresDataset
         return PostgresDataset(name)
