@@ -39,3 +39,4 @@ def test_postgres():
     assert len(list(dataset.fragments(entity_id="key1"))) == 2
 
     dataset.table.drop()
+    dataset.close()

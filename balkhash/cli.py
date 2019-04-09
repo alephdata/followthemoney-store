@@ -36,6 +36,7 @@ def write(dataset, file):
         bulk.flush()
     except BrokenPipeError:
         raise click.Abort()
+    dataset.close()
 
 
 @cli.command('iterate', help="Iterate entities")
@@ -49,6 +50,7 @@ def iterate(dataset, file, entity):
         file.write(entity)
         file.write('\n')
         file.flush()
+    dataset.close()
 
 
 @cli.command('delete', help="Delete entities")
@@ -57,3 +59,4 @@ def iterate(dataset, file, entity):
 def delete(dataset, entity):
     dataset = get_dataset(dataset)
     dataset.delete(entity_id=entity)
+    dataset.close()

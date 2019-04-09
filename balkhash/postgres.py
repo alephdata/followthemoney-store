@@ -82,6 +82,9 @@ class PostgresDataset(Dataset):
                 ent["fragment"] = None
             yield ent
 
+    def close(self):
+        self.engine.dispose()
+
 
 class PostgresBulk(Bulk):
 

@@ -26,4 +26,5 @@ def test_leveldb():
     assert len(list(dataset.iterate(entity_id="key1"))) == 1
     assert len(list(dataset.iterate(entity_id="key3"))) == 1
 
+    dataset.close()
     shutil.rmtree(settings.LEVELDB_PATH)

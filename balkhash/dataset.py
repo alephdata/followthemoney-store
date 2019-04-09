@@ -23,6 +23,9 @@ class Dataset(ABC):
     def fragments(self, entity_id=None, fragment=None):
         pass
 
+    def close(self):
+        pass
+
     def _entity_dict(self, entity):
         if hasattr(entity, 'to_dict'):
             entity = entity.to_dict()

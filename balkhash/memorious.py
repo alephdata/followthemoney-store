@@ -23,3 +23,4 @@ def balkhash_put(context, data):
         writer.put(entity, entity.pop('fragment', None))
         context.emit(rule='fragment', data=data, optional=True)
     context.emit(data=data, optional=True)
+    writer.close()

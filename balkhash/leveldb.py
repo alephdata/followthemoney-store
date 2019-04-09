@@ -13,8 +13,8 @@ class LevelDBDataset(Dataset):
 
     def __init__(self, name):
         super(LevelDBDataset, self).__init__(name)
-        db = plyvel.DB(settings.LEVELDB_PATH, create_if_missing=True)
-        self.client = db.prefixed_db(name.encode())
+        self.db = plyvel.DB(settings.LEVELDB_PATH, create_if_missing=True)
+        self.client = self.db.prefixed_db(name.encode())
 
     def _make_key(self, entity_id, fragment):
         if entity_id is None:
@@ -52,6 +52,9 @@ class LevelDBDataset(Dataset):
         prefix = self._make_key(entity_id, fragment)
         for key, blob in self.client.iterator(prefix=prefix):
             yield self._deserialize(blob)
+
+    def close(self):
+        self.db.close()
 
 
 class LevelDBBulk(Bulk):
