@@ -32,7 +32,7 @@ def write(dataset, file):
             entity = json.loads(line)
             bulk.put(entity, fragment=str(idx))
             if idx % 1000 == 0:
-                log.info("Write: %s entities", idx)
+                log.info("Write [%s]: %s entities", dataset, idx)
         bulk.flush()
     except BrokenPipeError:
         raise click.Abort()

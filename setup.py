@@ -32,7 +32,7 @@ setup(
     ],
     extras_require={
         'sql': [
-            'psycopg2-binary>=2.7.7',
+            'psycopg2-binary>=2.7',
             'SQLAlchemy>=1.3.1',
         ],
         'google': [
