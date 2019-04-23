@@ -38,13 +38,13 @@ class Dataset(ABC):
     def iterate(self, entity_id=None):
         entity = None
         for fragment in self.fragments(entity_id=entity_id):
-            fragment = model.get_proxy(fragment)
+            partial = model.get_proxy(fragment)
             if entity is not None:
-                if entity.id == fragment.id:
-                    entity.merge(fragment)
+                if entity.id == partial.id:
+                    entity.merge(partial)
                     continue
                 yield entity
-            entity = fragment
+            entity = partial
         if entity is not None:
             yield entity
 
