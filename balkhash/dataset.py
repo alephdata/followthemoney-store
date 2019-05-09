@@ -57,6 +57,7 @@ class Bulk(ABC):
         self.buffer = []
 
     def put(self, entity, fragment=None):
+        entity = self.dataset._entity_dict(entity)
         self.buffer.append((entity, fragment))
         if len(self.buffer) >= self.size:
             self.flush()

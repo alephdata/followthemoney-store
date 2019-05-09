@@ -1,5 +1,6 @@
 import logging
 import datetime
+from normality import slugify
 from sqlalchemy import Column, DateTime, String, UniqueConstraint
 from sqlalchemy import Table, MetaData
 from sqlalchemy.dialects.postgresql import insert
@@ -20,8 +21,9 @@ class PostgresDataset(Dataset):
     def __init__(self, name, database_uri=None):
         super(PostgresDataset, self).__init__(name)
         database_uri = database_uri or settings.DATABASE_URI
+        name = '%s %s' % (settings.DATABASE_PREFIX, name)
+        name = slugify(name, sep='_')
         self.engine = create_engine(database_uri)
-        self.table_name = name
         meta = MetaData(self.engine)
         self.table = Table(name, meta,
             Column('id', String(128)),  # noqa
@@ -45,6 +47,7 @@ class PostgresDataset(Dataset):
             conn.execute(statement)
 
     def put(self, entity, fragment=None):
+        entity = self._entity_dict(entity)
         with self.engine.begin() as conn:
             upsert_statement = insert(self.table).values(
                 id=entity['id'],

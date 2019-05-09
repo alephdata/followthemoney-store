@@ -27,7 +27,7 @@ setup(
     zip_safe=True,
     install_requires=[
         'followthemoney>=1.5.4',
-        'normality>=0.6.1',
+        'normality>=1.0.0',
         'click>=7.0.0',
     ],
     extras_require={
