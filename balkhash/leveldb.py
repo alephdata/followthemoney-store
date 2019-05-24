@@ -11,9 +11,10 @@ log = logging.getLogger(__name__)
 
 class LevelDBDataset(Dataset):
 
-    def __init__(self, name):
+    def __init__(self, name, path=None):
         super(LevelDBDataset, self).__init__(name)
-        self.db = plyvel.DB(settings.LEVELDB_PATH, create_if_missing=True)
+        path = path or settings.LEVELDB_PATH
+        self.db = plyvel.DB(path, create_if_missing=True)
         self.client = self.db.prefixed_db(name.encode())
 
     def _make_key(self, entity_id, fragment):

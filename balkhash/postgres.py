@@ -18,10 +18,11 @@ EMPTY = ''
 
 class PostgresDataset(Dataset):
 
-    def __init__(self, name, database_uri=None):
+    def __init__(self, name, database_uri=None, prefix=None):
         super(PostgresDataset, self).__init__(name)
         database_uri = database_uri or settings.DATABASE_URI
-        name = '%s %s' % (settings.DATABASE_PREFIX, name)
+        prefix = prefix or settings.DATABASE_PREFIX
+        name = '%s %s' % (prefix, name)
         name = slugify(name, sep='_')
         self.engine = create_engine(database_uri)
         meta = MetaData(self.engine)
@@ -102,6 +103,8 @@ class PostgresBulk(Bulk):
                     "schema": ent["schema"]
                 } for (ent, frag) in self.buffer
             ]
+            if not len(values):
+                return
             insert_statement = insert(self.dataset.table).values(values)
             upsert_statement = insert_statement.on_conflict_do_update(
                 index_elements=['id', 'fragment'],
