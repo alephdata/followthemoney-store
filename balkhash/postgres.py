@@ -27,10 +27,10 @@ class PostgresDataset(Dataset):
         self.engine = create_engine(database_uri)
         meta = MetaData(self.engine)
         self.table = Table(name, meta,
-            Column('id', String(128)),  # noqa
-            Column('fragment', String(128), nullable=False, default=EMPTY),
+            Column('id', String),  # noqa
+            Column('fragment', String, nullable=False, default=EMPTY),
             Column('properties', postgresql.JSONB),
-            Column('schema', String(128)),
+            Column('schema', String),
             Column('timestamp', DateTime, default=datetime.datetime.utcnow),
             UniqueConstraint('id', 'fragment'),
             extend_existing=True
