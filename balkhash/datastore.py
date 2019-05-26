@@ -64,7 +64,8 @@ class GoogleDatastoreDataset(Dataset):
 class GoogleDatastoreBulk(Bulk):
 
     def flush(self):
-        entities = [self.dataset._encode(e, f) for (e, f) in self.buffer]
+        entities = [(e, f) for ((_, f), e) in self.buffer.items()]
+        entities = [self.dataset._encode(e, f) for (e, f) in entities]
         if not len(entities):
             return
         if len(entities) == 1:

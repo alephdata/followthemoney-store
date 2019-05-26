@@ -33,6 +33,7 @@ def test_postgres():
 
     bulk = dataset.bulk()
     bulk.put(entity1)
+    bulk.put(entity1)
     bulk.put(entity1f, fragment='f')
     bulk.flush()
     assert len(list(dataset.iterate(entity_id="key1"))) == 1

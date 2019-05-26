@@ -65,7 +65,7 @@ class LevelDBBulk(Bulk):
 
     def flush(self):
         # with self.dataset.client.write_batch() as batch:
-        #     for (entity, fragment) in self.buffer:
+        #     for ((_, fragment), entity) in self.buffer.items():
         #         key, entity = self.dataset._encode(entity, fragment)
         #         batch.put(key, entity)
         pass

@@ -54,14 +54,14 @@ class Bulk(ABC):
     def __init__(self, dataset, size):
         self.dataset = dataset
         self.size = size
-        self.buffer = []
+        self.buffer = {}
 
     def put(self, entity, fragment=None):
         entity = self.dataset._entity_dict(entity)
-        self.buffer.append((entity, fragment))
+        self.buffer[(entity['id'], fragment)] = entity
         if len(self.buffer) >= self.size:
             self.flush()
-            self.buffer = []
+            self.buffer = {}
 
     @abstractmethod
     def flush(self):

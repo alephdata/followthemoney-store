@@ -53,13 +53,13 @@ class PostgresDataset(Dataset):
             upsert_statement = insert(self.table).values(
                 id=entity['id'],
                 fragment=fragment or EMPTY,
-                properties=entity["properties"],
-                schema=entity["schema"],
+                properties=entity['properties'],
+                schema=entity['schema'],
             ).on_conflict_do_update(
                 index_elements=['id', 'fragment'],
                 set_=dict(
-                    properties=entity["properties"],
-                    schema=entity["schema"],
+                    properties=entity['properties'],
+                    schema=entity['schema'],
                 )
             )
             return conn.execute(upsert_statement)
@@ -82,8 +82,8 @@ class PostgresDataset(Dataset):
         for ent in entities:
             ent = dict(ent)
             ent.pop('timestamp', None)
-            if ent["fragment"] == EMPTY:
-                ent["fragment"] = None
+            if ent['fragment'] == EMPTY:
+                ent['fragment'] = None
             yield ent
 
     def close(self):
@@ -93,15 +93,14 @@ class PostgresDataset(Dataset):
 class PostgresBulk(Bulk):
 
     def flush(self):
-        # Bulk insert WILL FAIL if there are duplicate conflicting values
         with self.dataset.engine.begin() as conn:
             values = [
                 {
-                    "id": ent['id'],
-                    "fragment": frag or EMPTY,
-                    "properties": ent["properties"],
-                    "schema": ent["schema"]
-                } for (ent, frag) in self.buffer
+                    'id': entity_id,
+                    'fragment': fragment or EMPTY,
+                    'properties': entity['properties'],
+                    'schema': entity['schema']
+                } for (entity_id, fragment), entity in self.buffer.items()
             ]
             if not len(values):
                 return
