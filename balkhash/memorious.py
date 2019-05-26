@@ -2,15 +2,17 @@ from banal import ensure_list
 from memorious.settings import DATASTORE_URI
 
 from balkhash import settings, init
-from balkhash.postgres import PostgresDataset
 
 
 def get_dataset(context):
-    dataset = context.get('dataset', context.crawler.name)
-    backend = context.get('backend', settings.BACKEND_ENV)
-    if backend is None and 'postgres' in DATASTORE_URI:
-        return PostgresDataset(dataset, database_uri=DATASTORE_URI)
-    return init(dataset, backend=backend)
+    config = {
+        'name': context.get('dataset', context.crawler.name),
+        'backend': context.get('backend', settings.BACKEND_ENV)
+    }
+    if config['backend'] is None and 'postgres' in DATASTORE_URI:
+        config['backend'] = 'POSTGRESQL'
+        config['database_uri'] = DATASTORE_URI
+    return init(**config)
 
 
 def balkhash_put(context, data):

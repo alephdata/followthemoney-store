@@ -4,8 +4,9 @@ from abc import ABC, abstractmethod
 
 class Dataset(ABC):
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, config):
+        self.config = config
+        self.name = config.get('name')
 
     @abstractmethod
     def delete(self, entity_id=None, fragment=None):

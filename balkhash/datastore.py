@@ -10,9 +10,9 @@ log = logging.getLogger(__name__)
 
 class GoogleDatastoreDataset(Dataset):
 
-    def __init__(self, name):
-        super(GoogleDatastoreDataset, self).__init__(name)
-        self.client = datastore.Client(namespace=name)
+    def __init__(self, config):
+        super(GoogleDatastoreDataset, self).__init__(config)
+        self.client = datastore.Client(namespace=self.name)
 
     def _make_key(self, entity_id, fragment):
         if fragment:

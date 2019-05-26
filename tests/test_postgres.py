@@ -9,7 +9,7 @@ def test_postgres():
 
     from balkhash.postgres import PostgresDataset
 
-    dataset = PostgresDataset("test")
+    dataset = PostgresDataset({'name': "test"})
 
     entity1 = {"id": "key1", "schema": "Person", "properties": {}}
     entity1f = {"id": "key1", "schema": "LegalEntity", "properties": {}}

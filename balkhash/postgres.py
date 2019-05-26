@@ -18,11 +18,11 @@ EMPTY = ''
 
 class PostgresDataset(Dataset):
 
-    def __init__(self, name, database_uri=None, prefix=None):
-        super(PostgresDataset, self).__init__(name)
-        database_uri = database_uri or settings.DATABASE_URI
-        prefix = prefix or settings.DATABASE_PREFIX
-        name = '%s %s' % (prefix, name)
+    def __init__(self, config):
+        super(PostgresDataset, self).__init__(config)
+        database_uri = config.get('database_uri', settings.DATABASE_URI)
+        prefix = config.get('prefix', settings.DATABASE_PREFIX)
+        name = '%s %s' % (prefix, self.name)
         name = slugify(name, sep='_')
         self.engine = create_engine(database_uri)
         meta = MetaData(self.engine)
@@ -64,7 +64,7 @@ class PostgresDataset(Dataset):
             )
             return conn.execute(upsert_statement)
 
-    def bulk(self, size=1000):
+    def bulk(self, size=10000):
         return PostgresBulk(self, size)
 
     def fragments(self, entity_id=None, fragment=None):
@@ -93,6 +93,8 @@ class PostgresDataset(Dataset):
 class PostgresBulk(Bulk):
 
     def flush(self):
+        if not len(self.buffer):
+            return
         with self.dataset.engine.begin() as conn:
             values = [
                 {
@@ -102,8 +104,6 @@ class PostgresBulk(Bulk):
                     'schema': entity['schema']
                 } for (entity_id, fragment), entity in self.buffer.items()
             ]
-            if not len(values):
-                return
             insert_statement = insert(self.dataset.table).values(values)
             upsert_statement = insert_statement.on_conflict_do_update(
                 index_elements=['id', 'fragment'],
