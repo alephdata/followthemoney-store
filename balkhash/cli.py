@@ -4,6 +4,8 @@ import click
 import logging
 from itertools import count
 
+from balkhash import settings
+
 log = logging.getLogger('balkhash')
 
 
@@ -13,9 +15,12 @@ def get_dataset(name):
 
 
 @click.group(help="Store FollowTheMoney object data")
-def cli():
+@click.option('-v', '--verbose', default=False, is_flag=True)
+def cli(verbose):
     fmt = '%(name)s [%(levelname)s] %(message)s'
-    logging.basicConfig(stream=sys.stderr, level=logging.INFO, format=fmt)
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(stream=sys.stderr, level=level, format=fmt)
+    settings.VERBOSE = verbose
 
 
 @cli.command('write', help="Store entities")
@@ -30,6 +35,8 @@ def write(dataset, file):
             if not line:
                 break
             entity = json.loads(line)
+            if settings.VERBOSE:
+                log.debug("[%s]: %s", entity.id, entity.caption)
             bulk.put(entity, fragment=str(idx))
             if idx % 1000 == 0:
                 log.info("Write [%s]: %s entities", dataset.name, idx)
@@ -46,11 +53,12 @@ def write(dataset, file):
 def iterate(dataset, file, entity):
     dataset = get_dataset(dataset)
     for entity in dataset.iterate(entity_id=entity):
+        if settings.VERBOSE:
+            log.debug("[%s]: %s", entity.id, entity.caption)
         entity = json.dumps(entity.to_dict())
-        file.write(entity)
-        file.write('\n')
-        file.flush()
+        file.write(entity + '\n')
     dataset.close()
+    file.flush()
 
 
 @cli.command('delete', help="Delete entities")
