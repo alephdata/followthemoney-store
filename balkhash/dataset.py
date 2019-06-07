@@ -40,6 +40,7 @@ class Dataset(ABC):
         entity = None
         for fragment in self.fragments(entity_id=entity_id):
             partial = model.get_proxy(fragment)
+            partial.context = {}
             if entity is not None:
                 if entity.id == partial.id:
                     entity.merge(partial)
