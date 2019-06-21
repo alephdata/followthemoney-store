@@ -38,31 +38,29 @@ class PostgresDataset(Dataset):
         self.table.create(bind=self.engine, checkfirst=True)
 
     def delete(self, entity_id=None, fragment=None):
-        with self.engine.begin() as conn:
-            table = self.table
-            statement = table.delete()
-            if entity_id is not None:
-                statement = statement.where(table.c.id == entity_id)
-                if fragment is not None:
-                    statement = statement.where(table.c.fragment == fragment)
-            conn.execute(statement)
+        table = self.table
+        statement = table.delete()
+        if entity_id is not None:
+            statement = statement.where(table.c.id == entity_id)
+            if fragment is not None:
+                statement = statement.where(table.c.fragment == fragment)
+        self.engine.execute(statement)
 
     def put(self, entity, fragment=None):
         entity = self._entity_dict(entity)
-        with self.engine.begin() as conn:
-            upsert_statement = insert(self.table).values(
-                id=entity['id'],
-                fragment=fragment or EMPTY,
+        upsert_statement = insert(self.table).values(
+            id=entity['id'],
+            fragment=fragment or EMPTY,
+            properties=entity['properties'],
+            schema=entity['schema'],
+        ).on_conflict_do_update(
+            index_elements=['id', 'fragment'],
+            set_=dict(
                 properties=entity['properties'],
                 schema=entity['schema'],
-            ).on_conflict_do_update(
-                index_elements=['id', 'fragment'],
-                set_=dict(
-                    properties=entity['properties'],
-                    schema=entity['schema'],
-                )
             )
-            return conn.execute(upsert_statement)
+        )
+        return self.engine.execute(upsert_statement)
 
     def bulk(self, size=10000):
         return PostgresBulk(self, size)
@@ -91,9 +89,7 @@ class PostgresDataset(Dataset):
 
     def __len__(self):
         q = select([func.count(distinct(self.table.c.id))])
-        for (count,) in self.engine.execute(q):
-            return count
-        return 0
+        return self.engine.execute(q).scalar()
 
     def __repr__(self):
         return '<PostgresDataset(%r, %r)>' % (self.engine, self.table.name)
@@ -104,21 +100,20 @@ class PostgresBulk(Bulk):
     def flush(self):
         if not len(self.buffer):
             return
-        with self.dataset.engine.begin() as conn:
-            values = [
-                {
-                    'id': entity_id,
-                    'fragment': fragment or EMPTY,
-                    'properties': entity['properties'],
-                    'schema': entity['schema']
-                } for (entity_id, fragment), entity in self.buffer.items()
-            ]
-            insert_statement = insert(self.dataset.table).values(values)
-            upsert_statement = insert_statement.on_conflict_do_update(
-                index_elements=['id', 'fragment'],
-                set_=dict(
-                    properties=insert_statement.excluded.properties,
-                    schema=insert_statement.excluded.schema,
-                )
+        values = [
+            {
+                'id': entity_id,
+                'fragment': fragment or EMPTY,
+                'properties': entity['properties'],
+                'schema': entity['schema']
+            } for (entity_id, fragment), entity in self.buffer.items()
+        ]
+        insert_statement = insert(self.dataset.table).values(values)
+        upsert_statement = insert_statement.on_conflict_do_update(
+            index_elements=['id', 'fragment'],
+            set_=dict(
+                properties=insert_statement.excluded.properties,
+                schema=insert_statement.excluded.schema,
             )
-            conn.execute(upsert_statement)
+        )
+        self.dataset.engine.execute(upsert_statement)
