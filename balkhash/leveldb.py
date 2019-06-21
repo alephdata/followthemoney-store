@@ -57,6 +57,9 @@ class LevelDBDataset(Dataset):
     def close(self):
         self.db.close()
 
+    def __repr__(self):
+        return '<LevelDBDataset(%r)>' % self.client
+
 
 class LevelDBBulk(Bulk):
 

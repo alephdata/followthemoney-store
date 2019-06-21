@@ -89,6 +89,9 @@ class PostgresDataset(Dataset):
     def close(self):
         self.engine.dispose()
 
+    def __repr__(self):
+        return '<PostgresDataset(%r, %r)>' % (self.engine, self.table.name)
+
 
 class PostgresBulk(Bulk):
 
