@@ -4,7 +4,7 @@ from normality import slugify
 from sqlalchemy import Column, DateTime, String, UniqueConstraint
 from sqlalchemy import Table, MetaData
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select, distinct, func
 from sqlalchemy.dialects import postgresql
 
 from balkhash import settings
@@ -67,6 +67,9 @@ class PostgresDataset(Dataset):
     def bulk(self, size=10000):
         return PostgresBulk(self, size)
 
+    def close(self):
+        self.engine.dispose()
+
     def fragments(self, entity_id=None, fragment=None):
         table = self.table
         statement = table.select()
@@ -86,8 +89,11 @@ class PostgresDataset(Dataset):
                 ent['fragment'] = None
             yield ent
 
-    def close(self):
-        self.engine.dispose()
+    def __len__(self):
+        q = select([func.count(distinct(self.table.c.id))])
+        for (count,) in self.engine.execute(q):
+            return count
+        return 0
 
     def __repr__(self):
         return '<PostgresDataset(%r, %r)>' % (self.engine, self.table.name)

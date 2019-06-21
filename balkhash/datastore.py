@@ -60,6 +60,9 @@ class GoogleDatastoreDataset(Dataset):
             data['properties'] = json.loads(entity['properties'])
             yield data
 
+    def __len__(self):
+        return 0
+
     def __repr__(self):
         return '<GoogleDatastoreDataset(%r)>' % self.name
 

@@ -49,13 +49,23 @@ class LevelDBDataset(Dataset):
     def bulk(self, size=1000):
         return LevelDBBulk(self, size)
 
+    def close(self):
+        self.db.close()
+
     def fragments(self, entity_id=None, fragment=None):
         prefix = self._make_key(entity_id, fragment)
         for key, blob in self.client.iterator(prefix=prefix):
             yield self._deserialize(blob)
 
-    def close(self):
-        self.db.close()
+    def __len__(self):
+        count = 0
+        prev = None
+        for key in self.client.iterator(include_value=False):
+            key = key.split(b'.', 1)[0]
+            if prev != key:
+                count += 1
+                prev = key
+        return count
 
     def __repr__(self):
         return '<LevelDBDataset(%r)>' % self.client

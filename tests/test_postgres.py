@@ -25,6 +25,7 @@ def test_postgres():
     assert dataset.get("key1").schema.name == 'Person'
 
     assert len(list(dataset.iterate())) == 3
+    assert len(dataset) == 3
     assert len(list(dataset.iterate(entity_id="key1"))) == 1
     assert len(list(dataset.iterate(entity_id="key3"))) == 1
 
