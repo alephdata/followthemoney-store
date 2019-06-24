@@ -50,6 +50,9 @@ class Dataset(ABC):
         if entity is not None:
             yield entity
 
+    def __iter__(self):
+        return self.iterate()
+
 
 class Bulk(ABC):
 
