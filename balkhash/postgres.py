@@ -1,6 +1,7 @@
 import logging
 import datetime
 from normality import slugify
+from sqlalchemy.pool import NullPool
 from sqlalchemy import Column, DateTime, String, UniqueConstraint
 from sqlalchemy import Table, MetaData
 from sqlalchemy.dialects.postgresql import insert
@@ -24,7 +25,7 @@ class PostgresDataset(Dataset):
         prefix = config.get('prefix', settings.DATABASE_PREFIX)
         name = '%s %s' % (prefix, self.name)
         name = slugify(name, sep='_')
-        self.engine = create_engine(database_uri)
+        self.engine = create_engine(database_uri, poolclass=NullPool)
         meta = MetaData(self.engine)
         self.table = Table(name, meta,
             Column('id', String),  # noqa
