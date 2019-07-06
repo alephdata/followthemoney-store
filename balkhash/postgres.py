@@ -52,7 +52,7 @@ class PostgresDataset(Dataset):
         bulk.put(entity, fragment=fragment or DEFAULT)
         return bulk.flush()
 
-    def bulk(self, size=500):
+    def bulk(self, size=1000):
         return PostgresBulk(self, size)
 
     def close(self):

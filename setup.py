@@ -35,10 +35,6 @@ setup(
             'psycopg2-binary>=2.7',
             'SQLAlchemy>=1.3.1',
         ],
-        'google': [
-            'google-cloud-datastore>=1.7.3',
-            'grpcio',
-        ],
         'leveldb': [
             'plyvel>=1.0.5',
         ]
