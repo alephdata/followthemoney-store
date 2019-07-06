@@ -1,6 +1,9 @@
+import time
+import random
 import logging
 import datetime
 from normality import slugify
+from psycopg2 import DatabaseError
 from sqlalchemy.pool import NullPool
 from sqlalchemy import Column, DateTime, String, UniqueConstraint
 from sqlalchemy import Table, MetaData
@@ -9,12 +12,9 @@ from sqlalchemy import create_engine, select, distinct, func
 from sqlalchemy.dialects import postgresql
 
 from balkhash import settings
-from balkhash.dataset import Dataset, Bulk
+from balkhash.dataset import Dataset, Bulk, DEFAULT
 
 log = logging.getLogger(__name__)
-# We have to cast null fragment values to "" to make the
-# UniqueConstraint work
-EMPTY = ''
 
 
 class PostgresDataset(Dataset):
@@ -29,7 +29,7 @@ class PostgresDataset(Dataset):
         meta = MetaData(self.engine)
         self.table = Table(name, meta,
             Column('id', String),  # noqa
-            Column('fragment', String, nullable=False, default=EMPTY),
+            Column('fragment', String, nullable=False, default=DEFAULT),
             Column('properties', postgresql.JSONB),
             Column('schema', String),
             Column('timestamp', DateTime, default=datetime.datetime.utcnow),
@@ -47,23 +47,12 @@ class PostgresDataset(Dataset):
                 statement = statement.where(table.c.fragment == fragment)
         self.engine.execute(statement)
 
-    def put(self, entity, fragment=None):
-        entity = self._entity_dict(entity)
-        upsert_statement = insert(self.table).values(
-            id=entity['id'],
-            fragment=fragment or EMPTY,
-            properties=entity['properties'],
-            schema=entity['schema'],
-        ).on_conflict_do_update(
-            index_elements=['id', 'fragment'],
-            set_=dict(
-                properties=entity['properties'],
-                schema=entity['schema'],
-            )
-        )
-        return self.engine.execute(upsert_statement)
+    def put(self, entity, fragment=DEFAULT):
+        bulk = self.bulk()
+        bulk.put(entity, fragment=fragment or DEFAULT)
+        return bulk.flush()
 
-    def bulk(self, size=10000):
+    def bulk(self, size=500):
         return PostgresBulk(self, size)
 
     def close(self):
@@ -84,8 +73,6 @@ class PostgresDataset(Dataset):
         for ent in entities:
             ent = dict(ent)
             ent.pop('timestamp', None)
-            if ent['fragment'] == EMPTY:
-                ent['fragment'] = None
             yield ent
 
     def __len__(self):
@@ -101,20 +88,30 @@ class PostgresBulk(Bulk):
     def flush(self):
         if not len(self.buffer):
             return
-        values = [
-            {
+        values = []
+        for (entity_id, fragment), entity in sorted(self.buffer.items()):
+            values.append({
                 'id': entity_id,
-                'fragment': fragment or EMPTY,
+                'fragment': fragment,
                 'properties': entity['properties'],
                 'schema': entity['schema']
-            } for (entity_id, fragment), entity in self.buffer.items()
-        ]
-        insert_statement = insert(self.dataset.table).values(values)
-        upsert_statement = insert_statement.on_conflict_do_update(
-            index_elements=['id', 'fragment'],
-            set_=dict(
-                properties=insert_statement.excluded.properties,
-                schema=insert_statement.excluded.schema,
-            )
-        )
-        self.dataset.engine.execute(upsert_statement)
+            })
+        for attempt in range(10):
+            conn = self.dataset.engine.connect()
+            tx = conn.begin()
+            try:
+                istmt = insert(self.dataset.table).values(values)
+                stmt = istmt.on_conflict_do_update(
+                    index_elements=['id', 'fragment'],
+                    set_=dict(
+                        properties=istmt.excluded.properties,
+                        schema=istmt.excluded.schema,
+                    )
+                )
+                conn.execute(stmt)
+                tx.commit()
+                return
+            except DatabaseError as err:
+                tx.rollback()
+                log.error("Database error: %s", err)
+                time.sleep(attempt + random.random())

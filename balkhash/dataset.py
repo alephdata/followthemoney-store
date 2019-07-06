@@ -1,6 +1,10 @@
 from followthemoney import model
 from abc import ABC, abstractmethod
 
+# We have to cast null fragment values to "" to make the
+# UniqueConstraint work
+DEFAULT = 'default'
+
 
 class Dataset(ABC):
 
@@ -13,7 +17,7 @@ class Dataset(ABC):
         pass
 
     @abstractmethod
-    def put(self, entity, fragment=None):
+    def put(self, entity, fragment=DEFAULT):
         pass
 
     @abstractmethod
@@ -61,9 +65,9 @@ class Bulk(ABC):
         self.size = size
         self.buffer = {}
 
-    def put(self, entity, fragment=None):
+    def put(self, entity, fragment=DEFAULT):
         entity = self.dataset._entity_dict(entity)
-        self.buffer[(entity['id'], fragment)] = entity
+        self.buffer[(entity['id'], fragment or DEFAULT)] = entity
         if len(self.buffer) >= self.size:
             self.flush()
             self.buffer = {}

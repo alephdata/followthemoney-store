@@ -2,9 +2,8 @@ import json
 import logging
 from google.cloud import datastore
 
-from balkhash.dataset import Dataset, Bulk
+from balkhash.dataset import Dataset, Bulk, DEFAULT
 
-KIND = 'Entity'
 log = logging.getLogger(__name__)
 
 
@@ -16,9 +15,9 @@ class GoogleDatastoreDataset(Dataset):
 
     def _make_key(self, entity_id, fragment):
         if fragment:
-            return self.client.key(KIND, entity_id, 'Fragment', fragment)
+            return self.client.key('Entity', entity_id, 'Fragment', fragment)
         if entity_id:
-            return self.client.key(KIND, entity_id)
+            return self.client.key('Entity', entity_id)
 
     def _encode(self, entity, fragment):
         entity = self._entity_dict(entity)
@@ -43,8 +42,8 @@ class GoogleDatastoreDataset(Dataset):
         if len(batch):
             self.client.delete_multi(batch)
 
-    def put(self, entity, fragment='default'):
-        entity = self._encode(entity, fragment)
+    def put(self, entity, fragment=DEFAULT):
+        entity = self._encode(entity, fragment or DEFAULT)
         return self.client.put(entity)
 
     def bulk(self, size=500):

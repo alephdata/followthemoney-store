@@ -4,7 +4,7 @@ import logging
 
 from balkhash import settings
 from balkhash.utils import to_bytes
-from balkhash.dataset import Dataset, Bulk
+from balkhash.dataset import Dataset, Bulk, DEFAULT
 
 log = logging.getLogger(__name__)
 
@@ -42,8 +42,8 @@ class LevelDBDataset(Dataset):
         for key in self.client.iterator(prefix=prefix, include_value=False):
             self.client.delete(key)
 
-    def put(self, entity, fragment=None):
-        key, entity = self._encode(entity, fragment)
+    def put(self, entity, fragment=DEFAULT):
+        key, entity = self._encode(entity, fragment or DEFAULT)
         return self.client.put(key, entity)
 
     def bulk(self, size=1000):
@@ -73,7 +73,7 @@ class LevelDBDataset(Dataset):
 
 class LevelDBBulk(Bulk):
 
-    def put(self, entity, fragment='default'):
+    def put(self, entity, fragment=DEFAULT):
         self.dataset.put(entity, fragment=fragment)
 
     def flush(self):
