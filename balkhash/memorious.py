@@ -2,8 +2,6 @@ import logging
 
 from banal import ensure_list
 from memorious.settings import DATASTORE_URI
-from alephclient.api import AlephAPI
-from alephclient import settings as alephclient_settings
 
 from balkhash import settings, init
 
@@ -42,14 +40,16 @@ def _get_entities(context):
         yield entity.to_dict()
 
 
-def aleph_bulk_push(context, params=None):
+def aleph_bulkpush(context, params=None):
+    try:
+        from alephclient.memorious import get_api
+    except ImportError:
+        context.log.warning("alephclient not installed. Skipping...")
+        return
     if params is None:
         params = {}
     entities = _get_entities(context)
-    host = alephclient_settings.HOST
-    api_key = alephclient_settings.API_KEY
-    retries = alephclient_settings.MAX_TRIES
-    api = AlephAPI(host, api_key, retries=retries)
+    api = get_api(context)
     foreign_id = params.get('foreign_id') or context.crawler.name
     collection = api.load_collection_by_foreign_id(foreign_id, {})
     collection_id = collection.get('id')
