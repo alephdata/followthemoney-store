@@ -40,22 +40,17 @@ def _get_entities(context):
         yield entity.to_dict()
 
 
-def aleph_bulkpush(context, params=None):
+def aleph_bulkpush(context, data):
     try:
         from alephclient.memorious import get_api
     except ImportError:
-        context.log.warning("alephclient not installed. Skipping...")
+        context.log.error("alephclient not installed. Skipping...")
         return
-    if params is None:
-        params = {}
-    entities = _get_entities(context)
     api = get_api(context)
-    foreign_id = params.get('foreign_id') or context.crawler.name
+    foreign_id = context.params.get('foreign_id', context.crawler.name)
     collection = api.load_collection_by_foreign_id(foreign_id, {})
     collection_id = collection.get('id')
-    merge = params.get('merge') or False
-    unsafe = params.get('unsafe') or False
-    force = params.get('force') or False
-    api.write_entities(
-        collection_id, entities, merge=merge, unsafe=unsafe, force=force
-    )
+    entities = _get_entities(context)
+    unsafe = context.params.get('unsafe', False)
+    force = context.params.get('force', False)
+    api.write_entities(collection_id, entities, unsafe=unsafe, force=force)
