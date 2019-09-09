@@ -26,7 +26,7 @@ setup(
     include_package_data=True,
     zip_safe=True,
     install_requires=[
-        'followthemoney>=1.5.4',
+        'followthemoney>=1.14.7',
         'normality>=1.0.0',
         'click>=7.0.0',
     ],
