@@ -47,10 +47,11 @@ def aleph_bulkpush(context, data):
         context.log.error("alephclient not installed. Skipping...")
         return
     api = get_api(context)
-    foreign_id = context.params.get('foreign_id', context.crawler.name)
-    collection = api.load_collection_by_foreign_id(foreign_id, {})
-    collection_id = collection.get('id')
-    entities = _get_entities(context)
-    unsafe = context.params.get('unsafe', False)
-    force = context.params.get('force', False)
-    api.write_entities(collection_id, entities, unsafe=unsafe, force=force)
+    if api is not None:
+        foreign_id = context.params.get('foreign_id', context.crawler.name)
+        collection = api.load_collection_by_foreign_id(foreign_id, {})
+        collection_id = collection.get('id')
+        entities = _get_entities(context)
+        unsafe = context.params.get('unsafe', False)
+        force = context.params.get('force', False)
+        api.write_entities(collection_id, entities, unsafe=unsafe, force=force)
