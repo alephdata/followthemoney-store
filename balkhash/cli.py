@@ -52,7 +52,7 @@ def write(dataset, file):
 @click.option('-e', '--entity', default=None)
 def iterate(dataset, file, entity):
     dataset = get_dataset(dataset)
-    for entity in dataset.iterate(entity_ids=entity):
+    for entity in dataset.iterate(entity_id=entity):
         if settings.VERBOSE:
             log.debug("[%s]: %s", entity.id, entity.caption)
         entity = json.dumps(entity.to_dict())
