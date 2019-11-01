@@ -34,9 +34,7 @@ def balkhash_put(context, data):
 
 
 def _get_entities(context):
-    reader = get_dataset(context)
-    entities = reader.iterate()
-    for entity in entities:
+    for entity in get_dataset(context):
         yield entity.to_dict()
 
 

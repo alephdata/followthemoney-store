@@ -2,6 +2,7 @@ import time
 import random
 import logging
 import datetime
+from banal import ensure_list
 from normality import slugify
 from psycopg2 import DatabaseError
 from sqlalchemy.pool import NullPool
@@ -58,11 +59,15 @@ class PostgresDataset(Dataset):
     def close(self):
         self.engine.dispose()
 
-    def fragments(self, entity_id=None, fragment=None):
+    def fragments(self, entity_ids=None, fragment=None):
         table = self.table
         statement = table.select()
-        if entity_id is not None:
-            statement = statement.where(table.c.id == entity_id)
+        if entity_ids is not None:
+            entity_ids = ensure_list(entity_ids)
+            if len(entity_ids) == 1:
+                statement = statement.where(table.c.id == entity_ids[0])
+            else:
+                statement = statement.where(table.c.id.in_(entity_ids))
             if fragment is not None:
                 statement = statement.where(table.c.fragment == fragment)
         statement = statement.order_by(table.c.id)

@@ -1,6 +1,7 @@
 import json
 import plyvel
 import logging
+from banal import ensure_list
 
 from balkhash import settings
 from balkhash.utils import to_bytes
@@ -52,10 +53,14 @@ class LevelDBDataset(Dataset):
     def close(self):
         self.db.close()
 
-    def fragments(self, entity_id=None, fragment=None):
-        prefix = self._make_key(entity_id, fragment)
-        for key, blob in self.client.iterator(prefix=prefix):
-            yield self._deserialize(blob)
+    def fragments(self, entity_ids=None, fragment=None):
+        # `entity_ids=None` means all, needs to be done explicitly:
+        if entity_ids is None:
+            entity_ids = [None]
+        for entity_id in ensure_list(entity_ids):
+            prefix = self._make_key(entity_id, fragment)
+            for key, blob in self.client.iterator(prefix=prefix):
+                yield self._deserialize(blob)
 
     def __len__(self):
         count = 0

@@ -29,6 +29,7 @@ setup(
         'followthemoney>=1.14.7',
         'normality>=1.0.0',
         'click>=7.0.0',
+        'banal>=0.4.2',
     ],
     extras_require={
         'sql': [

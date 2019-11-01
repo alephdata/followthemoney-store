@@ -25,7 +25,7 @@ class Dataset(ABC):
         pass
 
     @abstractmethod
-    def fragments(self, entity_id=None, fragment=None):
+    def fragments(self, entity_ids=None, fragment=None):
         pass
 
     def close(self):
@@ -42,7 +42,7 @@ class Dataset(ABC):
 
     def iterate(self, entity_id=None):
         entity = None
-        for fragment in self.fragments(entity_id=entity_id):
+        for fragment in self.fragments(entity_ids=entity_id):
             partial = model.get_proxy(fragment)
             partial.context = {}
             if entity is not None:

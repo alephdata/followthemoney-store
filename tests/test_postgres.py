@@ -29,6 +29,9 @@ def test_postgres():
     assert len(list(dataset.iterate(entity_id="key1"))) == 1
     assert len(list(dataset.iterate(entity_id="key3"))) == 1
 
+    both = ["key1", "key3"]
+    assert len(list(dataset.iterate(entity_id=both))) == 2
+
     dataset.delete(entity_id="key1")
     assert len(list(dataset.iterate(entity_id="key1"))) == 0
 
@@ -38,7 +41,7 @@ def test_postgres():
     bulk.put(entity1f, fragment='f')
     bulk.flush()
     assert len(list(dataset.iterate(entity_id="key1"))) == 1
-    assert len(list(dataset.fragments(entity_id="key1"))) == 2
+    assert len(list(dataset.fragments(entity_ids="key1"))) == 2
 
     dataset.table.drop()
     dataset.close()
