@@ -27,6 +27,7 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
+        sudo apt-get install libleveldb-dev
         pip install coverage wheel pytest
         pip install -e ".[leveldb]" ".[sql]"
     - name: Run the tests
