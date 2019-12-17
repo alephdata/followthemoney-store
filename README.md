@@ -9,9 +9,9 @@ This library provides methods to store, fetch and list entities formatted as
 
 ```bash
 # Insert a bunch of FtM entities into a store:
-$ cat ftm-entities.ijson | balkhash write -f my_dataset
+$ cat ftm-entities.ijson | balkhash write -d my_dataset
 # Re-create the entities in aggregated form:
-$ balkhash iterate -f my_dataset | alephclient write-entities -f my_dataset
+$ balkhash iterate -d my_dataset | alephclient write-entities -f my_dataset
 ```
 
 ### Python Library
