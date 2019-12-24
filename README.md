@@ -14,6 +14,13 @@ $ cat ftm-entities.ijson | balkhash write -d my_dataset
 $ balkhash iterate -d my_dataset | alephclient write-entities -f my_dataset
 ```
 
+If you don't want to keep the balkhash dataset generated above, there's a
+shortcut that combines the write and iterate functions:
+
+```bash
+$ cat ftm-entities.ijson | balkhash aggregate | alephclient write-entities -f my_dataset
+```
+
 ### Python Library
 
 ```python
@@ -22,8 +29,3 @@ import balkhash
 dataset = balkhash.init("US-OFAC")
 dataset.put(entity, fragment='1')
 ```
-
-## ToDo
-
-- Proper serialization and deserialization based on backend
-- Use entity hierarchy while storing fragments on Google Datastore
