@@ -40,11 +40,15 @@ class Dataset(ABC):
         for entity in self.iterate(entity_id=entity_id):
             return entity
 
-    def iterate(self, entity_id=None):
-        entity = None
+    def partials(self, entity_id=None):
         for fragment in self.fragments(entity_ids=entity_id):
             partial = model.get_proxy(fragment)
             partial.context = {}
+            yield partial
+
+    def iterate(self, entity_id=None):
+        entity = None
+        for partial in self.partials(entity_id=entity_id):
             if entity is not None:
                 if entity.id == partial.id:
                     entity.merge(partial)
