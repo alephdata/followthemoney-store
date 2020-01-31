@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='balkhash',
-    version='1.2.0',
+    version='1.2.1',
     description="Cloud storage library to store raw and structured data from "
                 "different datasets in a data lake",
     long_description="",
