@@ -6,7 +6,7 @@ settings.LEVELDB_PATH = 'testdb'
 
 
 def test_leveldb():
-    dataset = init("TEST-US-OFAC", backend="LEVELDB")
+    dataset = init("TEST-US-OFAC")
     assert dataset.name == "TEST-US-OFAC"
 
     entity1 = {"id": "key1", "schema": "Person", "properties": {}}

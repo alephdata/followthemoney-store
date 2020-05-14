@@ -4,12 +4,8 @@ settings.DATABASE_URI = 'postgresql://postgres@localhost:5432'
 
 
 def test_postgres():
-    dataset = init("TEST-US-OFAC", backend="POSTGRESQL")
+    dataset = init("TEST-US-OFAC")
     assert dataset.name == "TEST-US-OFAC"
-
-    from balkhash.postgres import PostgresDataset
-
-    dataset = PostgresDataset({'name': "test"})
 
     entity1 = {"id": "key1", "schema": "Person", "properties": {}}
     entity1f = {"id": "key1", "schema": "LegalEntity", "properties": {}}

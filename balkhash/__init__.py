@@ -1,15 +1,6 @@
-from balkhash import settings
+from balkhash.dataset import Dataset
 
 
-def init(name, backend=settings.BACKEND, **config):
-    backend = backend.upper()
-    assert backend in settings.BACKENDS, \
-        "Please specify a supported backend."
+def init(name, **config):
     config['name'] = name
-    config['backend'] = backend
-    if backend == "POSTGRESQL":
-        from balkhash.postgres import PostgresDataset
-        return PostgresDataset(config)
-    else:
-        from balkhash.leveldb import LevelDBDataset
-        return LevelDBDataset(config)
+    return Dataset(config)
