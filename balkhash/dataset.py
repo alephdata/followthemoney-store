@@ -1,4 +1,5 @@
 import logging
+from normality import slugify
 from datetime import datetime
 from banal import ensure_list
 from followthemoney import model
@@ -8,7 +9,6 @@ from sqlalchemy import Table, MetaData, JSON
 from sqlalchemy import create_engine, select, distinct, func
 
 from balkhash import settings
-from balkhash.utils import table_name
 from balkhash.loader import BulkLoader
 
 log = logging.getLogger(__name__)
@@ -19,12 +19,10 @@ class Dataset(object):
     def __init__(self, config):
         self.config = config
         self.name = config.get('name')
-        database_uri = config.get('database_uri', settings.DATABASE_URI)
-        prefix = config.get('prefix', settings.DATABASE_PREFIX)
-        self.engine = create_engine(database_uri, poolclass=NullPool)
+        uri = config.get('database_uri', settings.DATABASE_URI)
+        self.engine = create_engine(uri, poolclass=NullPool)
         meta = MetaData(self.engine)
-        name = table_name(prefix, self.name)
-        self.table = Table(name, meta,
+        self.table = Table(self.table_name, meta,
             Column('id', String),  # noqa
             Column('fragment', String, nullable=False),
             Column('properties', JSON),
@@ -34,6 +32,12 @@ class Dataset(object):
             extend_existing=True
         )
         self.table.create(bind=self.engine, checkfirst=True)
+
+    @property
+    def table_name(self):
+        prefix = self.config.get('prefix', settings.DATABASE_PREFIX)
+        name = '%s %s' % (prefix, self.config.get('name'))
+        return slugify(name, sep='_')
 
     def delete(self, entity_id=None, fragment=None):
         table = self.table
@@ -55,31 +59,28 @@ class Dataset(object):
     def close(self):
         self.engine.dispose()
 
-    def _entity_dict(self, entity):
-        if hasattr(entity, 'to_dict'):
-            entity = entity.to_dict()
-        return entity
-
     def fragments(self, entity_ids=None, fragment=None):
-        table = self.table
-        statement = table.select()
+        stmt = self.table.select()
         if entity_ids is not None:
             entity_ids = ensure_list(entity_ids)
             if len(entity_ids) == 1:
-                statement = statement.where(table.c.id == entity_ids[0])
+                stmt = stmt.where(self.table.c.id == entity_ids[0])
             else:
-                statement = statement.where(table.c.id.in_(entity_ids))
-            if fragment is not None:
-                statement = statement.where(table.c.fragment == fragment)
-        statement = statement.order_by(table.c.id)
-        statement = statement.order_by(table.c.fragment)
+                stmt = stmt.stmt(self.table.c.id.in_(entity_ids))
+        if fragment is not None:
+            stmt = stmt.where(self.table.c.fragment == fragment)
+        stmt = stmt.order_by(self.table.c.id)
+        stmt = stmt.order_by(self.table.c.fragment)
         conn = self.engine.connect()
-        conn = conn.execution_options(stream_results=True)
-        entities = conn.execute(statement)
-        for ent in entities:
-            ent = dict(ent)
-            ent.pop('timestamp', None)
-            yield ent
+        try:
+            conn = conn.execution_options(stream_results=True)
+            entities = conn.execute(stmt)
+            for ent in entities:
+                ent = dict(ent)
+                ent.pop('timestamp', None)
+                yield ent
+        finally:
+            conn.close()
 
     def partials(self, entity_id=None):
         for fragment in self.fragments(entity_ids=entity_id):

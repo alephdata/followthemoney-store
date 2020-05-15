@@ -1,23 +1,12 @@
-import logging
-
 from banal import ensure_list
 from memorious.settings import DATASTORE_URI
 
-from balkhash import settings, init
-
-
-log = logging.getLogger(__name__)
+from balkhash import init
 
 
 def get_dataset(context):
-    config = {
-        'name': context.get('dataset', context.crawler.name),
-        'backend': context.get('backend', settings.BACKEND_ENV)
-    }
-    if config['backend'] is None and 'postgres' in DATASTORE_URI:
-        config['backend'] = 'POSTGRESQL'
-        config['database_uri'] = DATASTORE_URI
-    return init(**config)
+    name = context.get('dataset', context.crawler.name)
+    return init(name, database_uri=DATASTORE_URI)
 
 
 def balkhash_put(context, data):

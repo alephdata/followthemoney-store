@@ -42,7 +42,6 @@ def cli(verbose):
     fmt = '%(name)s [%(levelname)s] %(message)s'
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(stream=sys.stderr, level=level, format=fmt)
-    settings.VERBOSE = verbose
 
 
 @cli.command('write', help="Store entities")
@@ -54,7 +53,6 @@ def write(dataset, file):
         write_stream(dataset, file)
     except BrokenPipeError:
         raise click.Abort()
-    dataset.close()
 
 
 @cli.command('iterate', help="Iterate entities")
@@ -64,7 +62,6 @@ def write(dataset, file):
 def iterate(dataset, file, entity):
     dataset = get_dataset(dataset)
     iterate_stream(dataset, file, entity_id=entity)
-    dataset.close()
     file.flush()
 
 
@@ -81,7 +78,6 @@ def aggregate(infile, outfile):
         raise click.Abort()
     finally:
         dataset.delete()
-        dataset.close()
         outfile.flush()
 
 

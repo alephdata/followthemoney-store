@@ -1,5 +1,5 @@
 from hashlib import sha1
-from normality import stringify, slugify
+from normality import stringify
 
 # We have to cast null fragment values to some text to make the
 # UniqueConstraint work
@@ -19,8 +19,3 @@ def valid_fragment(fragment):
     if fragment is not None:
         return fragment
     return DEFAULT_FRAGMENT
-
-
-def table_name(prefix, name):
-    name = '%s %s' % (prefix, name)
-    return slugify(name, sep='_')

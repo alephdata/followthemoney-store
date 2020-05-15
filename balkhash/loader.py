@@ -2,8 +2,9 @@ import time
 import random
 import logging
 from datetime import datetime
-from sqlalchemy.exc import DatabaseError, DisconnectionError
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import DatabaseError, DisconnectionError, IntegrityError
+from sqlalchemy.sql.expression import insert, update
+from sqlalchemy.dialects.postgresql import insert as upsert
 
 from balkhash.utils import valid_fragment
 
@@ -25,46 +26,68 @@ class BulkLoader(object):
         self.buffer = {}
 
     def put(self, entity, fragment=None):
-        entity = self.dataset._entity_dict(entity)
         fragment = valid_fragment(fragment)
         self.buffer[(entity['id'], fragment)] = entity
         if len(self.buffer) >= self.size:
             self.flush()
 
+    def _store_values(self, conn, values):
+        table = self.dataset.table
+        changing = ('properties', 'schema', 'timestamp',)
+        try:
+            conn.execute(insert(table).values(values))
+        except IntegrityError:
+            for value in values:
+                stmt = update(table)
+                changed = {c: value[c] for c in changing}
+                stmt = stmt.values(changed)
+                stmt = stmt.where(table.c.id == value['id'])
+                stmt = stmt.where(table.c.fragment == value['fragment'])
+                stmt = stmt.where(table.c.timestamp < value['timestamp'])
+                conn.execute(stmt)
+
+    def _upsert_values(self, conn, values):
+        istmt = upsert(self.dataset.table).values(values)
+        stmt = istmt.on_conflict_do_update(
+            index_elements=['id', 'fragment'],
+            set_=dict(
+                properties=istmt.excluded.properties,
+                schema=istmt.excluded.schema,
+            )
+        )
+        conn.execute(stmt)
+
     def flush(self):
+        if not len(self.buffer):
+            return
+        values = []
+        now = datetime.utcnow()
+        for (entity_id, fragment), entity in sorted(self.buffer.items()):
+            if hasattr(entity, 'to_dict'):
+                entity = entity.to_dict()
+            values.append({
+                'id': entity_id,
+                'fragment': fragment,
+                'properties': entity['properties'],
+                'schema': entity['schema'],
+                'timestamp': now
+            })
+        conn = self.dataset.engine.connect()
+        tx = conn.begin()
+        self._store_values(conn, values)
+        tx.commit()
+        conn.close()
         self.buffer = {}
 
-
-# class UpsertLoader(Loader):
-
-#     def flush(self):
-#         if not len(self.buffer):
-#             return
-#         values = []
-#         for (entity_id, fragment), entity in sorted(self.buffer.items()):
-#             values.append({
-#                 'id': entity_id,
-#                 'fragment': fragment,
-#                 'properties': entity['properties'],
-#                 'schema': entity['schema']
-#             })
-#         for attempt in range(10):
-#             conn = self.dataset.engine.connect()
-#             tx = conn.begin()
-#             try:
-#                 istmt = insert(self.dataset.table).values(values)
-#                 stmt = istmt.on_conflict_do_update(
-#                     index_elements=['id', 'fragment'],
-#                     set_=dict(
-#                         properties=istmt.excluded.properties,
-#                         schema=istmt.excluded.schema,
-#                     )
-#                 )
-#                 conn.execute(stmt)
-#                 tx.commit()
-#                 self.buffer = {}
-#                 return
-#             except EXCEPTIONS as err:
-#                 tx.rollback()
-#                 log.error("Database error: %s", err)
-#                 time.sleep(attempt + random.random())
+        # for attempt in [1]:
+        #     conn = self.dataset.engine.connect()
+        #     tx = conn.begin()
+        #     try:
+        #         self._store_values(conn, values)
+        #         tx.commit()
+        #         self.buffer = {}
+        #         return
+        #     except EXCEPTIONS as err:
+        #         tx.rollback()
+        #         log.error("Database error: %s", err)
+        #         time.sleep(attempt + random.random())
