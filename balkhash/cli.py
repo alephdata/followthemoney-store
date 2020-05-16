@@ -6,14 +6,9 @@ from uuid import uuid4
 from itertools import count
 from followthemoney.cli.util import write_object
 
-from balkhash import settings
+from balkhash.dataset import Dataset
 
 log = logging.getLogger('balkhash')
-
-
-def get_dataset(name):
-    from balkhash import init
-    return init(name)
 
 
 def write_stream(dataset, file):
@@ -31,8 +26,7 @@ def write_stream(dataset, file):
 
 def iterate_stream(dataset, file, entity_id=None):
     for entity in dataset.iterate(entity_id=entity_id):
-        if settings.VERBOSE:
-            log.debug("[%s]: %s", entity.id, entity.caption)
+        log.debug("[%s]: %s", entity.id, entity.caption)
         write_object(file, entity)
 
 
@@ -48,7 +42,7 @@ def cli(verbose):
 @click.option('-d', '--dataset', required=True)
 @click.option('-f', '--file', type=click.File('r'), default='-')  # noqa
 def write(dataset, file):
-    dataset = get_dataset(dataset)
+    dataset = Dataset(dataset)
     try:
         write_stream(dataset, file)
     except BrokenPipeError:
@@ -60,7 +54,7 @@ def write(dataset, file):
 @click.option('-f', '--file', type=click.File('w'), default='-')  # noqa
 @click.option('-e', '--entity', default=None)
 def iterate(dataset, file, entity):
-    dataset = get_dataset(dataset)
+    dataset = Dataset(dataset)
     iterate_stream(dataset, file, entity_id=entity)
     file.flush()
 
@@ -69,8 +63,7 @@ def iterate(dataset, file, entity):
 @click.option('-i', '--infile', type=click.File('r'), default='-')  # noqa
 @click.option('-o', '--outfile', type=click.File('w'), default='-')  # noqa
 def aggregate(infile, outfile):
-    dataset = 'aggregate_%s' % uuid4().hex
-    dataset = get_dataset(dataset)
+    dataset = Dataset('aggregate_%s' % uuid4().hex)
     try:
         write_stream(dataset, infile)
         iterate_stream(dataset, outfile)
@@ -85,6 +78,5 @@ def aggregate(infile, outfile):
 @click.option('-d', '--dataset', required=True)
 @click.option('-e', '--entity', default=None)
 def delete(dataset, entity):
-    dataset = get_dataset(dataset)
+    dataset = Dataset(dataset)
     dataset.delete(entity_id=entity)
-    dataset.close()

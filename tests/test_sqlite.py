@@ -1,12 +1,9 @@
-import shutil
-
-from balkhash import init, settings
-
-settings.LEVELDB_PATH = 'testdb'
+from balkhash import init
 
 
-def test_leveldb():
-    dataset = init("TEST-US-OFAC")
+def test_sqlite():
+    uri = 'sqlite://'
+    dataset = init("TEST-US-OFAC", database_uri=uri)
     assert dataset.name == "TEST-US-OFAC"
 
     entity1 = {"id": "key1", "schema": "Person", "properties": {}}
@@ -29,4 +26,3 @@ def test_leveldb():
     assert len(list(dataset.iterate(entity_id="key3"))) == 1
 
     dataset.close()
-    shutil.rmtree(settings.LEVELDB_PATH)

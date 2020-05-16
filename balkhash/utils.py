@@ -12,10 +12,3 @@ def safe_fragment(fragment):
     if fragment is not None:
         fragment = fragment.encode('utf-8', errors='replace')
         return sha1(fragment).hexdigest()
-
-
-def valid_fragment(fragment):
-    fragment = stringify(fragment)
-    if fragment is not None:
-        return fragment
-    return DEFAULT_FRAGMENT

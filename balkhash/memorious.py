@@ -1,12 +1,12 @@
 from banal import ensure_list
 from memorious.settings import DATASTORE_URI
 
-from balkhash import init
+from balkhash.dataset import Dataset
 
 
 def get_dataset(context):
     name = context.get('dataset', context.crawler.name)
-    return init(name, database_uri=DATASTORE_URI)
+    return Dataset(name, database_uri=DATASTORE_URI)
 
 
 def balkhash_put(context, data):

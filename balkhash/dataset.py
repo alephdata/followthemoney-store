@@ -3,7 +3,6 @@ from normality import slugify
 from datetime import datetime
 from banal import ensure_list
 from followthemoney import model
-from sqlalchemy.pool import NullPool
 from sqlalchemy import Column, DateTime, String, UniqueConstraint
 from sqlalchemy import Table, MetaData, JSON
 from sqlalchemy import create_engine, select, distinct, func
@@ -16,13 +15,15 @@ log = logging.getLogger(__name__)
 
 class Dataset(object):
 
-    def __init__(self, config):
-        self.config = config
-        self.name = config.get('name')
-        uri = config.get('database_uri', settings.DATABASE_URI)
-        self.engine = create_engine(uri, poolclass=NullPool)
+    def __init__(self, name, database_uri=settings.DATABASE_URI,
+                 prefix=settings.DATABASE_PREFIX, **config):
+        self.name = name
+        self.prefix = prefix
+        self.engine = create_engine(database_uri)
+        self.is_postgres = self.engine.dialect.name == 'postgresql'
         meta = MetaData(self.engine)
-        self.table = Table(self.table_name, meta,
+        table_name = slugify('%s %s' % (self.prefix, self.name), sep='_')
+        self.table = Table(table_name, meta,
             Column('id', String),  # noqa
             Column('fragment', String, nullable=False),
             Column('properties', JSON),
@@ -32,12 +33,6 @@ class Dataset(object):
             extend_existing=True
         )
         self.table.create(bind=self.engine, checkfirst=True)
-
-    @property
-    def table_name(self):
-        prefix = self.config.get('prefix', settings.DATABASE_PREFIX)
-        name = '%s %s' % (prefix, self.config.get('name'))
-        return slugify(name, sep='_')
 
     def delete(self, entity_id=None, fragment=None):
         table = self.table
@@ -66,7 +61,7 @@ class Dataset(object):
             if len(entity_ids) == 1:
                 stmt = stmt.where(self.table.c.id == entity_ids[0])
             else:
-                stmt = stmt.stmt(self.table.c.id.in_(entity_ids))
+                stmt = stmt.where(self.table.c.id.in_(entity_ids))
         if fragment is not None:
             stmt = stmt.where(self.table.c.fragment == fragment)
         stmt = stmt.order_by(self.table.c.id)

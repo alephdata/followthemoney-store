@@ -2,13 +2,12 @@ import time
 import random
 import logging
 from datetime import datetime
+from normality import stringify
 from sqlalchemy.exc import DatabaseError, DisconnectionError, IntegrityError
 from sqlalchemy.sql.expression import insert, update
 from sqlalchemy.dialects.postgresql import insert as upsert
 
-from balkhash.utils import valid_fragment
-
-log = logging.getLogger(__name__)
+from balkhash.utils import DEFAULT_FRAGMENT
 
 EXCEPTIONS = (DatabaseError, DisconnectionError,)
 try:
@@ -16,6 +15,8 @@ try:
     EXCEPTIONS = (DatabaseError, *EXCEPTIONS)
 except ImportError:
     pass
+
+log = logging.getLogger(__name__)
 
 
 class BulkLoader(object):
@@ -26,7 +27,7 @@ class BulkLoader(object):
         self.buffer = {}
 
     def put(self, entity, fragment=None):
-        fragment = valid_fragment(fragment)
+        fragment = stringify(fragment) or DEFAULT_FRAGMENT
         self.buffer[(entity['id'], fragment)] = entity
         if len(self.buffer) >= self.size:
             self.flush()
@@ -47,6 +48,7 @@ class BulkLoader(object):
                 conn.execute(stmt)
 
     def _upsert_values(self, conn, values):
+        """Use postgres' upsert mechanism (ON CONFLICT TO UPDATE)."""
         istmt = upsert(self.dataset.table).values(values)
         stmt = istmt.on_conflict_do_update(
             index_elements=['id', 'fragment'],
@@ -72,22 +74,22 @@ class BulkLoader(object):
                 'schema': entity['schema'],
                 'timestamp': now
             })
-        conn = self.dataset.engine.connect()
-        tx = conn.begin()
-        self._store_values(conn, values)
-        tx.commit()
-        conn.close()
-        self.buffer = {}
 
-        # for attempt in [1]:
-        #     conn = self.dataset.engine.connect()
-        #     tx = conn.begin()
-        #     try:
-        #         self._store_values(conn, values)
-        #         tx.commit()
-        #         self.buffer = {}
-        #         return
-        #     except EXCEPTIONS as err:
-        #         tx.rollback()
-        #         log.error("Database error: %s", err)
-        #         time.sleep(attempt + random.random())
+        for attempt in range(10):
+            conn = self.dataset.engine.connect()
+            tx = conn.begin()
+            try:
+                if self.dataset.is_postgres:
+                    self._upsert_values(conn, values)
+                else:
+                    self._store_values(conn, values)
+                tx.commit()
+                conn.close()
+                self.buffer = {}
+                return
+            except EXCEPTIONS:
+                tx.rollback()
+                conn.close()
+                self.dataset.engine.dispose()
+                log.exception("Database error storing entities")
+                time.sleep(attempt * random.random())
