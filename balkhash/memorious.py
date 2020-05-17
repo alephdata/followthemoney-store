@@ -22,11 +22,6 @@ def balkhash_put(context, data):
     writer.close()
 
 
-def _get_entities(context):
-    for entity in get_dataset(context):
-        yield entity.to_dict()
-
-
 def aleph_bulkpush(context, data):
     try:
         from alephclient.memorious import get_api
@@ -38,7 +33,7 @@ def aleph_bulkpush(context, data):
         foreign_id = context.params.get('foreign_id', context.crawler.name)
         collection = api.load_collection_by_foreign_id(foreign_id, {})
         collection_id = collection.get('id')
-        entities = _get_entities(context)
         unsafe = context.params.get('unsafe', False)
         force = context.params.get('force', False)
+        entities = get_dataset(context)
         api.write_entities(collection_id, entities, unsafe=unsafe, force=force)

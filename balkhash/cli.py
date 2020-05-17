@@ -40,23 +40,22 @@ def cli(verbose):
 
 @cli.command('write', help="Store entities")
 @click.option('-d', '--dataset', required=True)
-@click.option('-f', '--file', type=click.File('r'), default='-')  # noqa
-def write(dataset, file):
-    dataset = Dataset(dataset)
+@click.option('-i', '--infile', type=click.File('r'), default='-')  # noqa
+def write(dataset, infile):
     try:
-        write_stream(dataset, file)
+        dataset = Dataset(dataset)
+        write_stream(dataset, infile)
     except BrokenPipeError:
         raise click.Abort()
 
 
 @cli.command('iterate', help="Iterate entities")
 @click.option('-d', '--dataset', required=True)
-@click.option('-f', '--file', type=click.File('w'), default='-')  # noqa
-@click.option('-e', '--entity', default=None)
-def iterate(dataset, file, entity):
+@click.option('-o', '--outfile', type=click.File('w'), default='-')  # noqa
+def iterate(dataset, outfile):
     dataset = Dataset(dataset)
-    iterate_stream(dataset, file, entity_id=entity)
-    file.flush()
+    iterate_stream(dataset, outfile)
+    outfile.flush()
 
 
 @cli.command('aggregate', help="Combination of write and iterate.")

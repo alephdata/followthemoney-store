@@ -7,8 +7,9 @@ from sqlalchemy.exc import DatabaseError, DisconnectionError, IntegrityError
 from sqlalchemy.sql.expression import insert, update
 from sqlalchemy.dialects.postgresql import insert as upsert
 
-from balkhash.utils import DEFAULT_FRAGMENT
-
+# We have to cast null fragment values to some text to make the
+# UniqueConstraint work
+DEFAULT_FRAGMENT = 'default'
 EXCEPTIONS = (DatabaseError, DisconnectionError,)
 try:
     from psycopg2 import DatabaseError
@@ -31,7 +32,8 @@ class BulkLoader(object):
         fragment = stringify(fragment) or DEFAULT_FRAGMENT
         if hasattr(entity, 'to_dict'):
             entity = entity.to_dict()
-        self.buffer[(entity['id'], origin, fragment)] = entity
+        id_ = entity.get('id')
+        self.buffer[(id_, origin, fragment)] = entity
         if len(self.buffer) >= self.size:
             self.flush()
 
@@ -43,9 +45,10 @@ class BulkLoader(object):
         except IntegrityError:
             for value in values:
                 stmt = update(table)
-                changed = {c: value[c] for c in changing}
+                changed = {c: value.get(c, {}) for c in changing}
                 stmt = stmt.values(changed)
                 stmt = stmt.where(table.c.id == value['id'])
+                stmt = stmt.where(table.c.origin == value['origin'])
                 stmt = stmt.where(table.c.fragment == value['fragment'])
                 stmt = stmt.where(table.c.timestamp < value['timestamp'])
                 conn.execute(stmt)
@@ -54,7 +57,7 @@ class BulkLoader(object):
         """Use postgres' upsert mechanism (ON CONFLICT TO UPDATE)."""
         istmt = upsert(self.dataset.table).values(values)
         stmt = istmt.on_conflict_do_update(
-            index_elements=['id', 'fragment'],
+            index_elements=['id', 'origin', 'fragment'],
             set_=dict(
                 properties=istmt.excluded.properties,
                 schema=istmt.excluded.schema,
@@ -72,8 +75,8 @@ class BulkLoader(object):
                 'id': id_,
                 'origin': origin,
                 'fragment': fragment,
-                'properties': entity['properties'],
-                'schema': entity['schema'],
+                'properties': entity.get('properties', {}),
+                'schema': entity.get('schema', None),
                 'timestamp': now
             })
 
