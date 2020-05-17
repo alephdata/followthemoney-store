@@ -26,9 +26,12 @@ class BulkLoader(object):
         self.size = size
         self.buffer = {}
 
-    def put(self, entity, fragment=None):
+    def put(self, entity, fragment=None, origin=None):
+        origin = origin or self.dataset.origin
         fragment = stringify(fragment) or DEFAULT_FRAGMENT
-        self.buffer[(entity['id'], fragment)] = entity
+        if hasattr(entity, 'to_dict'):
+            entity = entity.to_dict()
+        self.buffer[(entity['id'], origin, fragment)] = entity
         if len(self.buffer) >= self.size:
             self.flush()
 
@@ -64,11 +67,10 @@ class BulkLoader(object):
             return
         values = []
         now = datetime.utcnow()
-        for (entity_id, fragment), entity in sorted(self.buffer.items()):
-            if hasattr(entity, 'to_dict'):
-                entity = entity.to_dict()
+        for (id_, origin, fragment), entity in sorted(self.buffer.items()):
             values.append({
-                'id': entity_id,
+                'id': id_,
+                'origin': origin,
                 'fragment': fragment,
                 'properties': entity['properties'],
                 'schema': entity['schema'],

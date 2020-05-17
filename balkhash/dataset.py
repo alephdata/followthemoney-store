@@ -6,6 +6,7 @@ from followthemoney import model
 from sqlalchemy import Column, DateTime, String, UniqueConstraint
 from sqlalchemy import Table, MetaData, JSON
 from sqlalchemy import create_engine, select, distinct, func
+from sqlalchemy.dialects.postgresql import JSONB
 
 from balkhash import settings
 from balkhash.loader import BulkLoader
@@ -15,37 +16,42 @@ log = logging.getLogger(__name__)
 
 class Dataset(object):
 
-    def __init__(self, name, database_uri=settings.DATABASE_URI,
+    def __init__(self, name, origin='void',
+                 database_uri=settings.DATABASE_URI,
                  prefix=settings.DATABASE_PREFIX, **config):
         self.name = name
+        self.origin = origin
         self.prefix = prefix
         self.engine = create_engine(database_uri)
         self.is_postgres = self.engine.dialect.name == 'postgresql'
         meta = MetaData(self.engine)
         table_name = slugify('%s %s' % (self.prefix, self.name), sep='_')
         self.table = Table(table_name, meta,
-            Column('id', String),  # noqa
+            Column('id', String, nullable=False),  # noqa
+            Column('origin', String, nullable=False),
             Column('fragment', String, nullable=False),
-            Column('properties', JSON),
-            Column('schema', String),
+            Column('schema', String, nullable=False),
+            Column('properties', JSONB if self.is_postgres else JSON),
             Column('timestamp', DateTime, default=datetime.utcnow),
-            UniqueConstraint('id', 'fragment'),
+            UniqueConstraint('id', 'origin', 'fragment'),
             extend_existing=True
         )
         self.table.create(bind=self.engine, checkfirst=True)
 
-    def delete(self, entity_id=None, fragment=None):
+    def delete(self, entity_id=None, fragment=None, origin=None):
         table = self.table
-        statement = table.delete()
+        stmt = table.delete()
         if entity_id is not None:
-            statement = statement.where(table.c.id == entity_id)
-            if fragment is not None:
-                statement = statement.where(table.c.fragment == fragment)
-        self.engine.execute(statement)
+            stmt = stmt.where(table.c.id == entity_id)
+        if fragment is not None:
+            stmt = stmt.where(table.c.fragment == fragment)
+        if origin is not None:
+            stmt = stmt.where(table.c.origin == origin)
+        self.engine.execute(stmt)
 
-    def put(self, entity, fragment=None):
+    def put(self, entity, fragment=None, origin=None):
         bulk = self.bulk()
-        bulk.put(entity, fragment=fragment)
+        bulk.put(entity, fragment=fragment, origin=origin)
         return bulk.flush()
 
     def bulk(self, size=1000):
@@ -65,15 +71,13 @@ class Dataset(object):
         if fragment is not None:
             stmt = stmt.where(self.table.c.fragment == fragment)
         stmt = stmt.order_by(self.table.c.id)
+        stmt = stmt.order_by(self.table.c.origin)
         stmt = stmt.order_by(self.table.c.fragment)
         conn = self.engine.connect()
         try:
             conn = conn.execution_options(stream_results=True)
-            entities = conn.execute(stmt)
-            for ent in entities:
-                ent = dict(ent)
-                ent.pop('timestamp', None)
-                yield ent
+            for ent in conn.execute(stmt):
+                yield dict(ent)
         finally:
             conn.close()
 
