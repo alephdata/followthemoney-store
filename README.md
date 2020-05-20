@@ -1,4 +1,4 @@
-# balkhash
+# followthemoney-store
 
 This library provides methods to store, fetch and list entities formatted as
 `followthemoney` data as datasets stored in a SQL backend.
@@ -24,8 +24,8 @@ $ cat ftm-entities.ijson | balkhash aggregate | alephclient write-entities -f my
 ### Python Library
 
 ```python
-import balkhash
+from ftmstore import Dataset
 
-dataset = balkhash.init("US-OFAC")
+dataset = Dataset("US-OFAC")
 dataset.put(entity, fragment='1')
 ```

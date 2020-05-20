@@ -1,7 +1,7 @@
 from banal import ensure_list
 from memorious.settings import DATASTORE_URI
 
-from balkhash.dataset import Dataset
+from ftmstore.dataset import Dataset
 
 
 def get_dataset(context):
@@ -9,7 +9,7 @@ def get_dataset(context):
     return Dataset(name, database_uri=DATASTORE_URI)
 
 
-def balkhash_put(context, data):
+def ftm_store(context, data):
     # This is a simplistic implementation of a balkhash memorious operation.
     # It is meant to serve the use of OCCRP where we pipe data into postgresql.
     writer = get_dataset(context)

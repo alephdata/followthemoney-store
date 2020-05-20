@@ -1,4 +1,4 @@
-from balkhash import init
+from ftmstore import init
 
 
 def test_sqlite():

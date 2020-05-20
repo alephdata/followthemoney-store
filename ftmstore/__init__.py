@@ -1,4 +1,4 @@
-from balkhash.dataset import Dataset
+from ftmstore.dataset import Dataset
 
 
 def init(name, **config):

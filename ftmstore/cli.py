@@ -4,11 +4,11 @@ import click
 import logging
 from uuid import uuid4
 from itertools import count
-from followthemoney.cli.util import write_object
 
-from balkhash.dataset import Dataset
+from followthemoney.cli.cli import cli as main
+from ftmstore.dataset import Dataset
 
-log = logging.getLogger('balkhash')
+log = logging.getLogger('ftmstore')
 
 
 def write_stream(dataset, file):
@@ -25,6 +25,7 @@ def write_stream(dataset, file):
 
 
 def iterate_stream(dataset, file, entity_id=None):
+    from followthemoney.cli.util import write_object
     for entity in dataset.iterate(entity_id=entity_id):
         log.debug("[%s]: %s", entity.id, entity.caption)
         write_object(file, entity)
@@ -79,3 +80,7 @@ def aggregate(infile, outfile):
 def delete(dataset, entity):
     dataset = Dataset(dataset)
     dataset.delete(entity_id=entity)
+
+
+# Register with main FtM command-line tool.
+main.add_command(cli, name='store')

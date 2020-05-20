@@ -1,4 +1,4 @@
-from balkhash import init, settings
+from ftmstore import init, settings
 
 settings.DATABASE_URI = 'postgresql://postgres@localhost:5432'
 

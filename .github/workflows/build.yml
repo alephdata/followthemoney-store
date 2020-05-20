@@ -1,4 +1,4 @@
-name: balkhash
+name: build
 
 on: [push]
 

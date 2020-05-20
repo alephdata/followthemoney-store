@@ -8,8 +8,8 @@ from sqlalchemy import Table, MetaData, JSON
 from sqlalchemy import create_engine, select, distinct, func
 from sqlalchemy.dialects.postgresql import JSONB
 
-from balkhash import settings
-from balkhash.loader import BulkLoader
+from ftmstore import settings
+from ftmstore.loader import BulkLoader
 
 log = logging.getLogger(__name__)
 
