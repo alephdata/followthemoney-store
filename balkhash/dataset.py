@@ -1,44 +1,85 @@
+import logging
+from normality import slugify
+from datetime import datetime
+from banal import ensure_list
 from followthemoney import model
-from abc import ABC, abstractmethod
+from sqlalchemy import Column, DateTime, String, UniqueConstraint
+from sqlalchemy import Table, MetaData, JSON
+from sqlalchemy import create_engine, select, distinct, func
+from sqlalchemy.dialects.postgresql import JSONB
 
-# We have to cast null fragment values to "" to make the
-# UniqueConstraint work
-DEFAULT = 'default'
+from balkhash import settings
+from balkhash.loader import BulkLoader
+
+log = logging.getLogger(__name__)
 
 
-class Dataset(ABC):
+class Dataset(object):
 
-    def __init__(self, config):
-        self.config = config
-        self.name = config.get('name')
+    def __init__(self, name, origin='void',
+                 database_uri=settings.DATABASE_URI,
+                 prefix=settings.DATABASE_PREFIX, **config):
+        self.name = name
+        self.origin = origin
+        self.prefix = prefix
+        self.engine = create_engine(database_uri)
+        self.is_postgres = self.engine.dialect.name == 'postgresql'
+        meta = MetaData(self.engine)
+        table_name = slugify('%s %s' % (self.prefix, self.name), sep='_')
+        self.table = Table(table_name, meta,
+            Column('id', String, nullable=False),  # noqa
+            Column('origin', String, nullable=False),
+            Column('fragment', String, nullable=False),
+            Column('schema', String, nullable=False),
+            Column('properties', JSONB if self.is_postgres else JSON),
+            Column('timestamp', DateTime, default=datetime.utcnow),
+            UniqueConstraint('id', 'origin', 'fragment'),
+            extend_existing=True
+        )
+        self.table.create(bind=self.engine, checkfirst=True)
 
-    @abstractmethod
-    def delete(self, entity_id=None, fragment=None):
-        pass
+    def delete(self, entity_id=None, fragment=None, origin=None):
+        table = self.table
+        stmt = table.delete()
+        if entity_id is not None:
+            stmt = stmt.where(table.c.id == entity_id)
+        if fragment is not None:
+            stmt = stmt.where(table.c.fragment == fragment)
+        if origin is not None:
+            stmt = stmt.where(table.c.origin == origin)
+        self.engine.execute(stmt)
 
-    @abstractmethod
-    def put(self, entity, fragment=DEFAULT):
-        pass
+    def put(self, entity, fragment=None, origin=None):
+        bulk = self.bulk()
+        bulk.put(entity, fragment=fragment, origin=origin)
+        return bulk.flush()
 
-    @abstractmethod
     def bulk(self, size=1000):
-        pass
-
-    @abstractmethod
-    def fragments(self, entity_ids=None, fragment=None):
-        pass
+        return BulkLoader(self, size)
 
     def close(self):
-        pass
+        self.engine.dispose()
 
-    def _entity_dict(self, entity):
-        if hasattr(entity, 'to_dict'):
-            entity = entity.to_dict()
-        return entity
-
-    def get(self, entity_id):
-        for entity in self.iterate(entity_id=entity_id):
-            return entity
+    def fragments(self, entity_ids=None, fragment=None):
+        stmt = self.table.select()
+        if entity_ids is not None:
+            entity_ids = ensure_list(entity_ids)
+            if len(entity_ids) == 1:
+                stmt = stmt.where(self.table.c.id == entity_ids[0])
+            else:
+                stmt = stmt.where(self.table.c.id.in_(entity_ids))
+        if fragment is not None:
+            stmt = stmt.where(self.table.c.fragment == fragment)
+        stmt = stmt.order_by(self.table.c.id)
+        stmt = stmt.order_by(self.table.c.origin)
+        stmt = stmt.order_by(self.table.c.fragment)
+        conn = self.engine.connect()
+        try:
+            conn = conn.execution_options(stream_results=True)
+            for ent in conn.execute(stmt):
+                yield dict(ent)
+        finally:
+            conn.close()
 
     def partials(self, entity_id=None):
         for fragment in self.fragments(entity_ids=entity_id):
@@ -58,24 +99,16 @@ class Dataset(ABC):
         if entity is not None:
             yield entity
 
+    def get(self, entity_id):
+        for entity in self.iterate(entity_id=entity_id):
+            return entity
+
     def __iter__(self):
         return self.iterate()
 
+    def __len__(self):
+        q = select([func.count(distinct(self.table.c.id))])
+        return self.engine.execute(q).scalar()
 
-class Bulk(ABC):
-
-    def __init__(self, dataset, size):
-        self.dataset = dataset
-        self.size = size
-        self.buffer = {}
-
-    def put(self, entity, fragment=DEFAULT):
-        entity = self.dataset._entity_dict(entity)
-        self.buffer[(entity['id'], fragment or DEFAULT)] = entity
-        if len(self.buffer) >= self.size:
-            self.flush()
-            self.buffer = {}
-
-    @abstractmethod
-    def flush(self):
-        pass
+    def __repr__(self):
+        return '<Dataset(%r, %r)>' % (self.engine, self.name)

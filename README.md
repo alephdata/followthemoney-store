@@ -1,7 +1,7 @@
-# Balkhash
+# balkhash
 
 This library provides methods to store, fetch and list entities formatted as
-`followthemoney` data as datasets stored in local or remote key-value stores.
+`followthemoney` data as datasets stored in a SQL backend.
 
 ## Usage
 

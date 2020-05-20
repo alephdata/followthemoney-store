@@ -1,12 +1,16 @@
 from setuptools import setup, find_packages
 
+with open('README.md') as f:
+    long_description = f.read()
+
 
 setup(
     name='balkhash',
     version='1.2.1',
-    description="Cloud storage library to store raw and structured data from "
+    description="Store raw and structured FollowTheMoney data from "
                 "different datasets in a data lake",
-    long_description="",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
@@ -26,19 +30,16 @@ setup(
     include_package_data=True,
     zip_safe=True,
     install_requires=[
-        'followthemoney>=1.14.7',
-        'normality>=1.0.0',
+        'followthemoney>=1.30.2',
+        'normality>=2.0.0',
         'click>=7.0.0',
-        'banal>=0.4.2',
+        'banal>=1.0.1',
+        'SQLAlchemy>=1.3.1'
     ],
     extras_require={
         'sql': [
             'psycopg2-binary>=2.7',
-            'SQLAlchemy>=1.3.1',
         ],
-        'leveldb': [
-            'plyvel>=1.0.5',
-        ]
     },
     tests_require=[],
     entry_points={
