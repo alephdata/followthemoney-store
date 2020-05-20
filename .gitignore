@@ -66,3 +66,4 @@ dmypy.json
 .vscode/
 balkhashdb/
 balkhash.sqlite3
+followthemoney.store
