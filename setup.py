@@ -28,7 +28,7 @@ setup(
     include_package_data=True,
     zip_safe=True,
     install_requires=[
-        'followthemoney>=1.30.2',
+        'followthemoney>=1.31.1',
         'SQLAlchemy>=1.3.1'
     ],
     extras_require={

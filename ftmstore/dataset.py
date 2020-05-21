@@ -11,12 +11,13 @@ from sqlalchemy.dialects.postgresql import JSONB
 from ftmstore import settings
 from ftmstore.loader import BulkLoader
 
+NULL_ORIGIN = 'null'
 log = logging.getLogger(__name__)
 
 
 class Dataset(object):
 
-    def __init__(self, name, origin='void',
+    def __init__(self, name, origin=NULL_ORIGIN,
                  database_uri=settings.DATABASE_URI,
                  prefix=settings.DATABASE_PREFIX, **config):
         self.name = name
@@ -30,9 +31,8 @@ class Dataset(object):
             Column('id', String, nullable=False),  # noqa
             Column('origin', String, nullable=False),
             Column('fragment', String, nullable=False),
-            Column('schema', String, nullable=False),
-            Column('properties', JSONB if self.is_postgres else JSON),
             Column('timestamp', DateTime, default=datetime.utcnow),
+            Column('entity', JSONB if self.is_postgres else JSON),
             UniqueConstraint('id', 'origin', 'fragment'),
             extend_existing=True
         )
@@ -77,15 +77,16 @@ class Dataset(object):
         try:
             conn = conn.execution_options(stream_results=True)
             for ent in conn.execute(stmt):
-                yield dict(ent)
+                data = {'id': ent.id, **ent.entity}
+                if ent.origin != NULL_ORIGIN:
+                    data['origin'] = ent.origin
+                yield data
         finally:
             conn.close()
 
     def partials(self, entity_id=None):
         for fragment in self.fragments(entity_ids=entity_id):
-            partial = model.get_proxy(fragment)
-            partial.context = {}
-            yield partial
+            yield model.get_proxy(fragment)
 
     def iterate(self, entity_id=None):
         entity = None

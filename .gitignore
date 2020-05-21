@@ -67,3 +67,4 @@ dmypy.json
 balkhashdb/
 balkhash.sqlite3
 followthemoney.store
+*-journal

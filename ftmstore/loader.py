@@ -32,17 +32,19 @@ class BulkLoader(object):
         fragment = stringify(fragment) or DEFAULT_FRAGMENT
         if hasattr(entity, 'to_dict'):
             entity = entity.to_dict()
-        id_ = entity.get('id')
+        else:
+            entity = dict(entity)
+        id_ = entity.pop('id')
         self.buffer[(id_, origin, fragment)] = entity
         if len(self.buffer) >= self.size:
             self.flush()
 
     def _store_values(self, conn, values):
         table = self.dataset.table
-        changing = ('properties', 'schema', 'timestamp',)
         try:
             conn.execute(insert(table).values(values))
         except IntegrityError:
+            changing = ('entity', 'timestamp',)
             for value in values:
                 stmt = update(table)
                 changed = {c: value.get(c, {}) for c in changing}
@@ -75,9 +77,8 @@ class BulkLoader(object):
                 'id': id_,
                 'origin': origin,
                 'fragment': fragment,
-                'properties': entity.get('properties', {}),
-                'schema': entity.get('schema', None),
-                'timestamp': now
+                'timestamp': now,
+                'entity': entity,
             })
 
         for attempt in range(10):
