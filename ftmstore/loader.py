@@ -61,8 +61,8 @@ class BulkLoader(object):
         stmt = istmt.on_conflict_do_update(
             index_elements=['id', 'origin', 'fragment'],
             set_=dict(
-                properties=istmt.excluded.properties,
-                schema=istmt.excluded.schema,
+                entity=istmt.excluded.entity,
+                timestamp=istmt.excluded.timestamp,
             )
         )
         conn.execute(stmt)
