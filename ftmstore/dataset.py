@@ -19,11 +19,13 @@ class Dataset(object):
 
     def __init__(self, name, origin=NULL_ORIGIN,
                  database_uri=settings.DATABASE_URI,
-                 prefix=settings.DATABASE_PREFIX, **config):
+                 prefix=settings.DATABASE_PREFIX,
+                 **config):
         self.name = name
         self.origin = origin
         self.prefix = prefix
-        self.engine = create_engine(database_uri)
+        # config.setdefault('pool_size', 1)
+        self.engine = create_engine(database_uri, **config)
         self.is_postgres = self.engine.dialect.name == 'postgresql'
         meta = MetaData(self.engine)
         table_name = slugify('%s %s' % (self.prefix, self.name), sep='_')
@@ -49,6 +51,10 @@ class Dataset(object):
             stmt = stmt.where(table.c.origin == origin)
         self.engine.execute(stmt)
 
+    def drop(self):
+        self.table.drop(self.engine)
+        self.close()
+
     def put(self, entity, fragment=None, origin=None):
         bulk = self.bulk()
         bulk.put(entity, fragment=fragment, origin=origin)
@@ -62,17 +68,16 @@ class Dataset(object):
 
     def fragments(self, entity_ids=None, fragment=None):
         stmt = self.table.select()
-        if entity_ids is not None:
-            entity_ids = ensure_list(entity_ids)
-            if len(entity_ids) == 1:
-                stmt = stmt.where(self.table.c.id == entity_ids[0])
-            else:
-                stmt = stmt.where(self.table.c.id.in_(entity_ids))
+        entity_ids = ensure_list(entity_ids)
+        if len(entity_ids) == 1:
+            stmt = stmt.where(self.table.c.id == entity_ids[0])
+        if len(entity_ids) > 1:
+            stmt = stmt.where(self.table.c.id.in_(entity_ids))
         if fragment is not None:
             stmt = stmt.where(self.table.c.fragment == fragment)
         stmt = stmt.order_by(self.table.c.id)
-        stmt = stmt.order_by(self.table.c.origin)
-        stmt = stmt.order_by(self.table.c.fragment)
+        # stmt = stmt.order_by(self.table.c.origin)
+        # stmt = stmt.order_by(self.table.c.fragment)
         conn = self.engine.connect()
         try:
             conn = conn.execution_options(stream_results=True)
