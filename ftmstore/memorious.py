@@ -28,7 +28,7 @@ def ftm_store(context, data):
     writer.close()
 
 
-def aleph_bulkpush(context, data):
+def ftm_load_aleph(context, data):
     try:
         from alephclient.memorious import get_api
     except ImportError:

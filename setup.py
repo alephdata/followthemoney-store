@@ -47,6 +47,7 @@ setup(
         'memorious.operations': [
             'balkhash_put = ftmstore.memorious:ftm_store',
             'ftm_store = ftmstore.memorious:ftm_store',
+            'ftm_load_aleph = ftmstore.memorious:ftm_load_aleph',
         ]
     }
 )
