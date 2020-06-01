@@ -6,7 +6,7 @@ with open('README.md') as f:
 
 setup(
     name='followthemoney-store',
-    version='2.1.2',
+    version='2.1.3',
     description="Store raw and structured FollowTheMoney data from "
                 "different datasets in a data lake",
     long_description=long_description,
