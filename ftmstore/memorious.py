@@ -4,15 +4,17 @@ from memorious.settings import DATASTORE_URI
 from ftmstore.dataset import Dataset
 from ftmstore.settings import DATABASE_URI, DEFAULT_DATABASE_URI
 
+ORIGIN = 'memorious'
 
-def get_dataset(context):
+
+def get_dataset(context, origin=ORIGIN):
     name = context.get('dataset', context.crawler.name)
     # Either use a database URI that has been explicitly set as a
     # backend, or default to the memorious datastore.
     database_uri = DATABASE_URI
     if DATABASE_URI == DEFAULT_DATABASE_URI:
         database_uri = DATASTORE_URI
-    return Dataset(name, database_uri=database_uri)
+    return Dataset(name, database_uri=database_uri, origin=origin)
 
 
 def ftm_store(context, data):
@@ -40,6 +42,5 @@ def ftm_load_aleph(context, data):
         collection = api.load_collection_by_foreign_id(foreign_id, {})
         collection_id = collection.get('id')
         unsafe = context.params.get('unsafe', False)
-        force = context.params.get('force', False)
         entities = get_dataset(context)
-        api.write_entities(collection_id, entities, unsafe=unsafe, force=force)
+        api.write_entities(collection_id, entities, unsafe=unsafe)
