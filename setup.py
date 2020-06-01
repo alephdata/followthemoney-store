@@ -39,7 +39,6 @@ setup(
     tests_require=[],
     entry_points={
         'console_scripts': [
-            'balkhash = ftmstore.cli:cli',
             'ftm-store = ftmstore.cli:cli',
         ],
         'followthemoney.cli': {

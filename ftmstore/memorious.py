@@ -2,11 +2,17 @@ from banal import ensure_list
 from memorious.settings import DATASTORE_URI
 
 from ftmstore.dataset import Dataset
+from ftmstore.settings import DATABASE_URI, DEFAULT_DATABASE_URI
 
 
 def get_dataset(context):
     name = context.get('dataset', context.crawler.name)
-    return Dataset(name, database_uri=DATASTORE_URI)
+    # Either use a database URI that has been explicitly set as a
+    # backend, or default to the memorious datastore.
+    database_uri = DATABASE_URI
+    if DATABASE_URI == DEFAULT_DATABASE_URI:
+        database_uri = DATASTORE_URI
+    return Dataset(name, database_uri=database_uri)
 
 
 def ftm_store(context, data):
