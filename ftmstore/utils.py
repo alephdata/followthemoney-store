@@ -2,6 +2,14 @@ from hashlib import sha1
 from normality import stringify
 
 
+class StoreException(Exception):
+    pass
+
+
+class DroppedException(StoreException):
+    pass
+
+
 def safe_fragment(fragment):
     """Make a hashed fragement."""
     fragment = stringify(fragment)

@@ -41,13 +41,14 @@ def ftm_load_aleph(context, data):
         context.log.error("alephclient not installed. Skipping...")
         return
     api = get_api(context)
-    if api is not None:
-        foreign_id = context.params.get('foreign_id', context.crawler.name)
-        collection = api.load_collection_by_foreign_id(foreign_id, {})
-        collection_id = collection.get('id')
-        unsafe = context.params.get('unsafe', False)
-        entities = get_dataset(context)
-        api.write_entities(collection_id, entities, unsafe=unsafe)
+    if api is None:
+        return
+    foreign_id = context.params.get('foreign_id', context.crawler.name)
+    collection = api.load_collection_by_foreign_id(foreign_id, {})
+    collection_id = collection.get('id')
+    unsafe = context.params.get('unsafe', False)
+    entities = get_dataset(context)
+    api.write_entities(collection_id, entities, unsafe=unsafe)
 
 
 class EntityEmitter(object):

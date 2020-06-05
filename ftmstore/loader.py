@@ -4,16 +4,20 @@ import logging
 from datetime import datetime
 from normality import stringify
 from sqlalchemy.exc import DatabaseError, DisconnectionError, IntegrityError
+from sqlalchemy.exc import OperationalError, ResourceClosedError, TimeoutError
 from sqlalchemy.sql.expression import insert, update
 from sqlalchemy.dialects.postgresql import insert as upsert
+
+from ftmstore.utils import DroppedException
 
 # We have to cast null fragment values to some text to make the
 # UniqueConstraint work
 DEFAULT_FRAGMENT = 'default'
-EXCEPTIONS = (DatabaseError, DisconnectionError,)
+EXCEPTIONS = (DatabaseError, DisconnectionError, OperationalError,
+              ResourceClosedError, TimeoutError)
 try:
-    from psycopg2 import DatabaseError
-    EXCEPTIONS = (DatabaseError, *EXCEPTIONS)
+    from psycopg2 import DatabaseError, OperationalError
+    EXCEPTIONS = (DatabaseError, OperationalError, *EXCEPTIONS)
 except ImportError:
     pass
 
@@ -70,6 +74,8 @@ class BulkLoader(object):
     def flush(self):
         if not len(self.buffer):
             return
+        if self.dataset._dropped:
+            raise DroppedException()
         values = []
         now = datetime.utcnow()
         for (id_, origin, fragment), entity in sorted(self.buffer.items()):

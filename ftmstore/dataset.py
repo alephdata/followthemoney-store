@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 from ftmstore import settings
 from ftmstore.loader import BulkLoader
+from ftmstore.utils import DroppedException
 
 NULL_ORIGIN = 'null'
 log = logging.getLogger(__name__)
@@ -39,8 +40,11 @@ class Dataset(object):
             extend_existing=True
         )
         self.table.create(bind=self.engine, checkfirst=True)
+        self._dropped = False
 
     def delete(self, entity_id=None, fragment=None, origin=None):
+        if self._dropped:
+            raise DroppedException()
         table = self.table
         stmt = table.delete()
         if entity_id is not None:
@@ -52,6 +56,7 @@ class Dataset(object):
         self.engine.execute(stmt)
 
     def drop(self):
+        self._dropped = True
         self.table.drop(self.engine)
         self.close()
 
@@ -67,6 +72,8 @@ class Dataset(object):
         self.engine.dispose()
 
     def fragments(self, entity_ids=None, fragment=None):
+        if self._dropped:
+            raise DroppedException()
         stmt = self.table.select()
         entity_ids = ensure_list(entity_ids)
         if len(entity_ids) == 1:
@@ -113,6 +120,8 @@ class Dataset(object):
         return self.iterate()
 
     def __len__(self):
+        if self._dropped:
+            raise DroppedException()
         q = select([func.count(distinct(self.table.c.id))])
         return self.engine.execute(q).scalar()
 
