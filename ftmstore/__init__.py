@@ -1,7 +1,7 @@
 from ftmstore.dataset import Dataset
 
 
-__all__ = ['Dataset']
+__all__ = ["Dataset"]
 
 
 def init(name, **config):

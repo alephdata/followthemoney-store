@@ -12,11 +12,17 @@ from ftmstore.utils import DroppedException
 
 # We have to cast null fragment values to some text to make the
 # UniqueConstraint work
-DEFAULT_FRAGMENT = 'default'
-EXCEPTIONS = (DatabaseError, DisconnectionError, OperationalError,
-              ResourceClosedError, TimeoutError)
+DEFAULT_FRAGMENT = "default"
+EXCEPTIONS = (
+    DatabaseError,
+    DisconnectionError,
+    OperationalError,
+    ResourceClosedError,
+    TimeoutError,
+)
 try:
     from psycopg2 import DatabaseError, OperationalError
+
     EXCEPTIONS = (DatabaseError, OperationalError, *EXCEPTIONS)
 except ImportError:
     pass
@@ -25,7 +31,6 @@ log = logging.getLogger(__name__)
 
 
 class BulkLoader(object):
-
     def __init__(self, dataset, size):
         self.dataset = dataset
         self.size = size
@@ -34,11 +39,11 @@ class BulkLoader(object):
     def put(self, entity, fragment=None, origin=None):
         origin = origin or self.dataset.origin
         fragment = stringify(fragment) or DEFAULT_FRAGMENT
-        if hasattr(entity, 'to_dict'):
+        if hasattr(entity, "to_dict"):
             entity = entity.to_dict()
         else:
             entity = dict(entity)
-        id_ = entity.pop('id')
+        id_ = entity.pop("id")
         self.buffer[(id_, origin, fragment)] = entity
         if len(self.buffer) >= self.size:
             self.flush()
@@ -48,26 +53,28 @@ class BulkLoader(object):
         try:
             conn.execute(insert(table).values(values))
         except IntegrityError:
-            changing = ('entity', 'timestamp',)
+            changing = (
+                "entity",
+                "timestamp",
+            )
             for value in values:
                 stmt = update(table)
                 changed = {c: value.get(c, {}) for c in changing}
                 stmt = stmt.values(changed)
-                stmt = stmt.where(table.c.id == value['id'])
-                stmt = stmt.where(table.c.origin == value['origin'])
-                stmt = stmt.where(table.c.fragment == value['fragment'])
-                stmt = stmt.where(table.c.timestamp < value['timestamp'])
+                stmt = stmt.where(table.c.id == value["id"])
+                stmt = stmt.where(table.c.origin == value["origin"])
+                stmt = stmt.where(table.c.fragment == value["fragment"])
+                stmt = stmt.where(table.c.timestamp < value["timestamp"])
                 conn.execute(stmt)
 
     def _upsert_values(self, conn, values):
         """Use postgres' upsert mechanism (ON CONFLICT TO UPDATE)."""
         istmt = upsert(self.dataset.table).values(values)
         stmt = istmt.on_conflict_do_update(
-            index_elements=['id', 'origin', 'fragment'],
+            index_elements=["id", "origin", "fragment"],
             set_=dict(
-                entity=istmt.excluded.entity,
-                timestamp=istmt.excluded.timestamp,
-            )
+                entity=istmt.excluded.entity, timestamp=istmt.excluded.timestamp,
+            ),
         )
         conn.execute(stmt)
 
@@ -79,13 +86,15 @@ class BulkLoader(object):
         values = []
         now = datetime.utcnow()
         for (id_, origin, fragment), entity in sorted(self.buffer.items()):
-            values.append({
-                'id': id_,
-                'origin': origin,
-                'fragment': fragment,
-                'timestamp': now,
-                'entity': entity,
-            })
+            values.append(
+                {
+                    "id": id_,
+                    "origin": origin,
+                    "fragment": fragment,
+                    "timestamp": now,
+                    "entity": entity,
+                }
+            )
 
         for attempt in range(10):
             conn = self.dataset.engine.connect()

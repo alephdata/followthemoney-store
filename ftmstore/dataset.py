@@ -12,32 +12,37 @@ from ftmstore import settings
 from ftmstore.loader import BulkLoader
 from ftmstore.utils import DroppedException
 
-NULL_ORIGIN = 'null'
+NULL_ORIGIN = "null"
 log = logging.getLogger(__name__)
 
 
 class Dataset(object):
-
-    def __init__(self, name, origin=NULL_ORIGIN,
-                 database_uri=settings.DATABASE_URI,
-                 prefix=settings.DATABASE_PREFIX,
-                 **config):
+    def __init__(
+        self,
+        name,
+        origin=NULL_ORIGIN,
+        database_uri=settings.DATABASE_URI,
+        prefix=settings.DATABASE_PREFIX,
+        **config
+    ):
         self.name = name
         self.origin = origin
         self.prefix = prefix
         # config.setdefault('pool_size', 1)
         self.engine = create_engine(database_uri, **config)
-        self.is_postgres = self.engine.dialect.name == 'postgresql'
+        self.is_postgres = self.engine.dialect.name == "postgresql"
         meta = MetaData(self.engine)
-        table_name = slugify('%s %s' % (self.prefix, self.name), sep='_')
-        self.table = Table(table_name, meta,
-            Column('id', String, nullable=False),  # noqa
-            Column('origin', String, nullable=False),
-            Column('fragment', String, nullable=False),
-            Column('timestamp', DateTime, default=datetime.utcnow),
-            Column('entity', JSONB if self.is_postgres else JSON),
-            UniqueConstraint('id', 'origin', 'fragment'),
-            extend_existing=True
+        table_name = slugify("%s %s" % (self.prefix, self.name), sep="_")
+        self.table = Table(
+            table_name,
+            meta,
+            Column("id", String, nullable=False),  # noqa
+            Column("origin", String, nullable=False),
+            Column("fragment", String, nullable=False),
+            Column("timestamp", DateTime, default=datetime.utcnow),
+            Column("entity", JSONB if self.is_postgres else JSON),
+            UniqueConstraint("id", "origin", "fragment"),
+            extend_existing=True,
         )
         self.table.create(bind=self.engine, checkfirst=True)
         self._dropped = False
@@ -89,9 +94,9 @@ class Dataset(object):
         try:
             conn = conn.execution_options(stream_results=True)
             for ent in conn.execute(stmt):
-                data = {'id': ent.id, **ent.entity}
+                data = {"id": ent.id, **ent.entity}
                 if ent.origin != NULL_ORIGIN:
-                    data['origin'] = ent.origin
+                    data["origin"] = ent.origin
                 yield data
         finally:
             conn.close()
@@ -126,4 +131,4 @@ class Dataset(object):
         return self.engine.execute(q).scalar()
 
     def __repr__(self):
-        return '<Dataset(%r, %r)>' % (self.engine, self.name)
+        return "<Dataset(%r, %r)>" % (self.engine, self.name)
