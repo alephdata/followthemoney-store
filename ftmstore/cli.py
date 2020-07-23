@@ -6,6 +6,7 @@ from uuid import uuid4
 from itertools import count
 
 from followthemoney.cli.cli import cli as main
+from ftmstore.settings import DATABASE_URI
 from ftmstore.dataset import Dataset, NULL_ORIGIN
 
 log = logging.getLogger("ftmstore")
@@ -41,29 +42,36 @@ def cli(verbose):
 
 
 @cli.command("write", help="Store entities")
+@click.option("--db", metavar="URI", default=DATABASE_URI, show_default=True)
 @click.option("-d", "--dataset", required=True)
-@click.option("-i", "--infile", type=click.File("r"), default="-")  # noqa
-@click.option("-o", "--origin", default=NULL_ORIGIN)  # noqa
-def write(dataset, infile, origin):
+@click.option("-i", "--infile", type=click.File("r"), default="-")
+@click.option("-o", "--origin", default=NULL_ORIGIN)
+def write(db, dataset, infile, origin):
+    dataset = Dataset(dataset, database_uri=db)
     try:
-        dataset = Dataset(dataset)
         write_stream(dataset, infile, origin=origin)
     except BrokenPipeError:
         raise click.Abort()
+    finally:
+        dataset.close()
 
 
 @cli.command("iterate", help="Iterate entities")
+@click.option("--db", metavar="URI", default=DATABASE_URI, show_default=True)
 @click.option("-d", "--dataset", required=True)
-@click.option("-o", "--outfile", type=click.File("w"), default="-")  # noqa
-def iterate(dataset, outfile):
-    dataset = Dataset(dataset)
-    iterate_stream(dataset, outfile)
-    outfile.flush()
+@click.option("-o", "--outfile", type=click.File("w"), default="-")
+def iterate(db, dataset, outfile):
+    dataset = Dataset(dataset, database_uri=db)
+    try:
+        iterate_stream(dataset, outfile)
+    finally:
+        outfile.flush()
+        dataset.close()
 
 
 @cli.command("aggregate", help="Combination of write and iterate.")
-@click.option("-i", "--infile", type=click.File("r"), default="-")  # noqa
-@click.option("-o", "--outfile", type=click.File("w"), default="-")  # noqa
+@click.option("-i", "--infile", type=click.File("r"), default="-")
+@click.option("-o", "--outfile", type=click.File("w"), default="-")
 def aggregate(infile, outfile):
     dataset = Dataset("aggregate_%s" % uuid4().hex)
     try:
@@ -77,12 +85,14 @@ def aggregate(infile, outfile):
 
 
 @cli.command("delete", help="Delete entities")
+@click.option("--db", metavar="URI", default=DATABASE_URI, show_default=True)
 @click.option("-d", "--dataset", required=True)
 @click.option("-o", "--origin", default=None)
 @click.option("-e", "--entity", default=None)
-def delete(dataset, origin, entity):
-    dataset = Dataset(dataset)
+def delete(db, dataset, origin, entity):
+    dataset = Dataset(dataset, database_uri=db)
     dataset.delete(origin=origin, entity_id=entity)
+    dataset.close()
 
 
 # Register with main FtM command-line tool.

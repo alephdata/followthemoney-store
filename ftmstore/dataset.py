@@ -36,7 +36,7 @@ class Dataset(object):
         self.table = Table(
             table_name,
             meta,
-            Column("id", String, nullable=False),  # noqa
+            Column("id", String, nullable=False),
             Column("origin", String, nullable=False),
             Column("fragment", String, nullable=False),
             Column("timestamp", DateTime, default=datetime.utcnow),
