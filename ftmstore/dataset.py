@@ -3,6 +3,7 @@ from normality import slugify
 from datetime import datetime
 from banal import ensure_list
 from followthemoney import model
+from followthemoney.proxy import EntityProxy
 from sqlalchemy import Column, DateTime, String, UniqueConstraint
 from sqlalchemy import Table, MetaData, JSON
 from sqlalchemy import create_engine, select, distinct, func
@@ -103,7 +104,7 @@ class Dataset(object):
 
     def partials(self, entity_id=None):
         for fragment in self.fragments(entity_ids=entity_id):
-            yield model.get_proxy(fragment)
+            yield EntityProxy(model, fragment, cleaned=True)
 
     def iterate(self, entity_id=None):
         entity = None
