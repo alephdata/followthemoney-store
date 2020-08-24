@@ -63,6 +63,7 @@ class Dataset(object):
 
     def drop(self):
         self._dropped = True
+        log.debug("Dropping ftm-store: %s", self.table)
         self.table.drop(self.engine)
         self.close()
 
@@ -108,13 +109,23 @@ class Dataset(object):
 
     def iterate(self, entity_id=None):
         entity = None
+        fragments = 1
         for partial in self.partials(entity_id=entity_id):
             if entity is not None:
                 if entity.id == partial.id:
+                    fragments += 1
+                    if fragments % 10000 == 0:
+                        log.debug(
+                            "[%s:%s] aggregated %d fragments...",
+                            entity.schema.name,
+                            entity.id,
+                            fragments,
+                        )
                     entity.merge(partial)
                     continue
                 yield entity
             entity = partial
+            fragments = 1
         if entity is not None:
             yield entity
 
