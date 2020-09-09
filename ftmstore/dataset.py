@@ -103,14 +103,23 @@ class Dataset(object):
         finally:
             conn.close()
 
-    def partials(self, entity_id=None):
+    def partials(self, entity_id=None, skip_errors=False):
         for fragment in self.fragments(entity_ids=entity_id):
-            yield EntityProxy(model, fragment, cleaned=True)
+            try:
+                yield EntityProxy(model, fragment, cleaned=True)
+            except Exception:
+                if skip_errors:
+                    log.exception("Invalid data [%s]: %s", self.name, fragment["id"])
+                    continue
+                raise
 
-    def iterate(self, entity_id=None):
+    def iterate(self, entity_id=None, skip_errors=False):
         entity = None
+        invalid = None
         fragments = 1
-        for partial in self.partials(entity_id=entity_id):
+        for partial in self.partials(entity_id=entity_id, skip_errors=skip_errors):
+            if partial.id == invalid:
+                continue
             if entity is not None:
                 if entity.id == partial.id:
                     fragments += 1
@@ -121,7 +130,18 @@ class Dataset(object):
                             entity.id,
                             fragments,
                         )
-                    entity.merge(partial)
+                    try:
+                        entity.merge(partial)
+                    except Exception:
+                        if skip_errors:
+                            log.exception(
+                                "Invalid merge [%s]: %s", self.name, entity.id
+                            )
+                            invalid = entity.id
+                            entity = None
+                            fragments = 1
+                            continue
+                        raise
                     continue
                 yield entity
             entity = partial
