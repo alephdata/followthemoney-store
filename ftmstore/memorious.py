@@ -3,13 +3,13 @@ from banal import ensure_list
 from memorious.settings import DATASTORE_URI
 from followthemoney import model
 
-from ftmstore.dataset import Dataset
+from ftmstore import get_dataset
 from ftmstore.settings import DATABASE_URI, DEFAULT_DATABASE_URI
 
 ORIGIN = "memorious"
 
 
-def get_dataset(context, origin=ORIGIN):
+def get_memorious_dataset(context, origin=ORIGIN):
     name = context.get("dataset", context.crawler.name)
     origin = context.get("dataset", origin)
     # Either use a database URI that has been explicitly set as a
@@ -17,21 +17,22 @@ def get_dataset(context, origin=ORIGIN):
     database_uri = DATABASE_URI
     if DATABASE_URI == DEFAULT_DATABASE_URI:
         database_uri = DATASTORE_URI
-    return Dataset(name, database_uri=database_uri, origin=origin)
+    return get_dataset(name, database_uri=database_uri, origin=origin)
 
 
 def ftm_store(context, data):
     """Store an entity or a list of entities to an ftm store."""
     # This is a simplistic implementation of a balkhash memorious operation.
     # It is meant to serve the use of OCCRP where we pipe data into postgresql.
-    writer = get_dataset(context)
+    dataset = get_memorious_dataset(context)
+    bulk = dataset.bulk()
     entities = ensure_list(data.get("entities", data))
     for entity in entities:
         context.log.debug("Store entity [%(schema)s]: %(id)s", entity)
-        writer.put(entity, entity.pop("fragment", None))
+        bulk.put(entity, entity.pop("fragment", None))
         context.emit(rule="fragment", data=data, optional=True)
     context.emit(data=data, optional=True)
-    writer.close()
+    bulk.flush()
 
 
 def ftm_load_aleph(context, data):
@@ -48,7 +49,7 @@ def ftm_load_aleph(context, data):
     collection = api.load_collection_by_foreign_id(foreign_id, {})
     collection_id = collection.get("id")
     unsafe = context.params.get("unsafe", False)
-    entities = get_dataset(context)
+    entities = get_memorious_dataset(context)
     api.write_entities(collection_id, entities, unsafe=unsafe)
 
 
@@ -60,7 +61,7 @@ class EntityEmitter(object):
         self.fragment = 0
         self.log = context.log
         self.name = context.crawler.name
-        self.dataset = get_dataset(context, origin=origin)
+        self.dataset = get_memorious_dataset(context, origin=origin)
         self.bulk = self.dataset.bulk()
 
     def make(self, schema):

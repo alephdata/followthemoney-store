@@ -18,6 +18,7 @@ class Store(object):
         **config,
     ):
         self.prefix = prefix
+        self.database_uri = database_uri
         # config.setdefault('pool_size', 1)
         self.engine = create_engine(database_uri, **config)
         self.is_postgres = self.engine.dialect.name == "postgresql"

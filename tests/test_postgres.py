@@ -1,6 +1,7 @@
 from ftmstore import init, settings
 
 settings.DATABASE_URI = "postgresql://postgres@localhost:5432"
+# settings.DATABASE_URI = "postgresql://aleph:aleph@localhost:15432/aleph"
 
 
 def test_postgres():
