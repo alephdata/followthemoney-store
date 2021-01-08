@@ -29,7 +29,7 @@ jobs:
         run: |
           sudo apt-get install libleveldb-dev
           pip install coverage wheel pytest
-          pip install -e "".[postgresql]"
+          pip install -e ".[postgresql]"
       - name: Run the tests
         run: |
           pytest
