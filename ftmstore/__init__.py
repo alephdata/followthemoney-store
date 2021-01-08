@@ -6,7 +6,7 @@ from ftmstore.dataset import Dataset
 from ftmstore.utils import NULL_ORIGIN
 
 
-__all__ = ["Dataset", "Store"]
+__all__ = ["Dataset", "Store", "get_store", "get_dataset"]
 
 
 @lru_cache(maxsize=6)
