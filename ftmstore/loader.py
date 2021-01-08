@@ -8,8 +8,6 @@ from sqlalchemy.exc import OperationalError, ResourceClosedError, TimeoutError
 from sqlalchemy.sql.expression import insert, update
 from sqlalchemy.dialects.postgresql import insert as upsert
 
-from ftmstore.utils import DroppedException
-
 # We have to cast null fragment values to some text to make the
 # UniqueConstraint work
 DEFAULT_FRAGMENT = "default"
@@ -33,6 +31,7 @@ log = logging.getLogger(__name__)
 class BulkLoader(object):
     def __init__(self, dataset, size):
         self.dataset = dataset
+        self.store = dataset.store
         self.size = size
         self.buffer = {}
 
@@ -73,7 +72,8 @@ class BulkLoader(object):
         stmt = istmt.on_conflict_do_update(
             index_elements=["id", "origin", "fragment"],
             set_=dict(
-                entity=istmt.excluded.entity, timestamp=istmt.excluded.timestamp,
+                entity=istmt.excluded.entity,
+                timestamp=istmt.excluded.timestamp,
             ),
         )
         conn.execute(stmt)
@@ -81,8 +81,6 @@ class BulkLoader(object):
     def flush(self):
         if not len(self.buffer):
             return
-        if self.dataset._dropped:
-            raise DroppedException()
         values = []
         now = datetime.utcnow()
         for (id_, origin, fragment), entity in sorted(self.buffer.items()):
@@ -97,10 +95,10 @@ class BulkLoader(object):
             )
 
         for attempt in range(10):
-            conn = self.dataset.engine.connect()
+            conn = self.store.engine.connect()
             tx = conn.begin()
             try:
-                if self.dataset.is_postgres:
+                if self.store.is_postgres:
                     self._upsert_values(conn, values)
                 else:
                     self._store_values(conn, values)
@@ -111,6 +109,6 @@ class BulkLoader(object):
             except EXCEPTIONS:
                 tx.rollback()
                 conn.close()
-                self.dataset.engine.dispose()
+                self.store.engine.dispose()
                 log.exception("Database error storing entities")
                 time.sleep(attempt * random.random())

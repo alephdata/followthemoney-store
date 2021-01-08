@@ -1,56 +1,48 @@
 import logging
-from normality import slugify
 from datetime import datetime
+from normality import slugify
 from banal import ensure_list
 from followthemoney import model
 from followthemoney.proxy import EntityProxy
 from sqlalchemy import Column, DateTime, String, UniqueConstraint
-from sqlalchemy import Table, MetaData, JSON
-from sqlalchemy import create_engine, select, distinct, func
+from sqlalchemy import Table, JSON
+from sqlalchemy import select, distinct, func
 from sqlalchemy.dialects.postgresql import JSONB
 
-from ftmstore import settings
 from ftmstore.loader import BulkLoader
-from ftmstore.utils import DroppedException
+from ftmstore.utils import NULL_ORIGIN
 
-NULL_ORIGIN = "null"
 log = logging.getLogger(__name__)
 
 
 class Dataset(object):
-    def __init__(
-        self,
-        name,
-        origin=NULL_ORIGIN,
-        database_uri=settings.DATABASE_URI,
-        prefix=settings.DATABASE_PREFIX,
-        **config
-    ):
+    def __init__(self, store, name, origin=NULL_ORIGIN):
+        self.store = store
         self.name = name
         self.origin = origin
-        self.prefix = prefix
-        # config.setdefault('pool_size', 1)
-        self.engine = create_engine(database_uri, **config)
-        self.is_postgres = self.engine.dialect.name == "postgresql"
-        meta = MetaData(self.engine)
-        table_name = slugify("%s %s" % (self.prefix, self.name), sep="_")
-        self.table = Table(
+        self._table = None
+
+    @property
+    def table(self):
+        if self._table is not None:
+            return self._table
+        table_name = slugify("%s %s" % (self.store.prefix, self.name), sep="_")
+        json_type = JSONB if self.store.is_postgres else JSON
+        self._table = Table(
             table_name,
-            meta,
+            self.store.meta,
             Column("id", String, nullable=False),
             Column("origin", String, nullable=False),
             Column("fragment", String, nullable=False),
             Column("timestamp", DateTime, default=datetime.utcnow),
-            Column("entity", JSONB if self.is_postgres else JSON),
+            Column("entity", json_type),
             UniqueConstraint("id", "origin", "fragment"),
             extend_existing=True,
         )
-        self.table.create(bind=self.engine, checkfirst=True)
-        self._dropped = False
+        self._table.create(bind=self.store.engine, checkfirst=True)
+        return self._table
 
     def delete(self, entity_id=None, fragment=None, origin=None):
-        if self._dropped:
-            raise DroppedException()
         table = self.table
         stmt = table.delete()
         if entity_id is not None:
@@ -59,13 +51,12 @@ class Dataset(object):
             stmt = stmt.where(table.c.fragment == fragment)
         if origin is not None:
             stmt = stmt.where(table.c.origin == origin)
-        self.engine.execute(stmt)
+        self.store.engine.execute(stmt)
 
     def drop(self):
-        self._dropped = True
         log.debug("Dropping ftm-store: %s", self.table)
-        self.table.drop(self.engine)
-        self.close()
+        self.table.drop(self.store.engine)
+        self._table = None
 
     def put(self, entity, fragment=None, origin=None):
         bulk = self.bulk()
@@ -75,12 +66,7 @@ class Dataset(object):
     def bulk(self, size=1000):
         return BulkLoader(self, size)
 
-    def close(self):
-        self.engine.dispose()
-
     def fragments(self, entity_ids=None, fragment=None):
-        if self._dropped:
-            raise DroppedException()
         stmt = self.table.select()
         entity_ids = ensure_list(entity_ids)
         if len(entity_ids) == 1:
@@ -92,7 +78,7 @@ class Dataset(object):
         stmt = stmt.order_by(self.table.c.id)
         # stmt = stmt.order_by(self.table.c.origin)
         # stmt = stmt.order_by(self.table.c.fragment)
-        conn = self.engine.connect()
+        conn = self.store.engine.connect()
         try:
             conn = conn.execution_options(stream_results=True)
             for ent in conn.execute(stmt):
@@ -157,10 +143,8 @@ class Dataset(object):
         return self.iterate()
 
     def __len__(self):
-        if self._dropped:
-            raise DroppedException()
         q = select([func.count(distinct(self.table.c.id))])
-        return self.engine.execute(q).scalar()
+        return self.store.engine.execute(q).scalar()
 
     def __repr__(self):
-        return "<Dataset(%r, %r)>" % (self.engine, self.name)
+        return "<Dataset(%r, %r)>" % (self.store, self.name)

@@ -5,6 +5,9 @@ def test_sqlite():
     uri = "sqlite://"
     dataset = init("TEST-US-OFAC", database_uri=uri)
     assert dataset.name == "TEST-US-OFAC"
+    assert len(dataset.store) == 0
+    dataset.drop()
+    assert len(dataset.store) == 0
 
     entity1 = {"id": "key1", "schema": "Person", "properties": {}}
     entity1f = {"id": "key1", "schema": "LegalEntity", "properties": {}}
@@ -24,5 +27,6 @@ def test_sqlite():
     assert len(dataset) == 3
     assert len(list(dataset.iterate(entity_id="key1"))) == 1
     assert len(list(dataset.iterate(entity_id="key3"))) == 1
+    assert len(dataset.store) == 1
 
-    dataset.close()
+    dataset.store.close()

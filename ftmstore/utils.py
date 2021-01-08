@@ -1,12 +1,10 @@
 from hashlib import sha1
 from normality import stringify
 
+NULL_ORIGIN = "null"
+
 
 class StoreException(Exception):
-    pass
-
-
-class DroppedException(StoreException):
     pass
 
 
