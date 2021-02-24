@@ -30,12 +30,5 @@ setup(
     install_requires=["followthemoney>=1.31.1", "SQLAlchemy>=1.3.1"],
     extras_require={"postgresql": ["psycopg2-binary>=2.7"]},
     tests_require=[],
-    entry_points={
-        "followthemoney.cli": ["store = ftmstore.cli:cli"],
-        "memorious.operations": [
-            "balkhash_put = ftmstore.memorious:ftm_store",
-            "ftm_store = ftmstore.memorious:ftm_store",
-            "ftm_load_aleph = ftmstore.memorious:ftm_load_aleph",
-        ],
-    },
+    entry_points={"followthemoney.cli": ["store = ftmstore.cli:cli"]},
 )
