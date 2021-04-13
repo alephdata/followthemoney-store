@@ -7,12 +7,20 @@ from followthemoney.proxy import EntityProxy
 from sqlalchemy import Column, DateTime, String, UniqueConstraint
 from sqlalchemy import Table, JSON
 from sqlalchemy import select, distinct, func
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.dialects.postgresql import JSONB
 
 from ftmstore.loader import BulkLoader
 from ftmstore.utils import NULL_ORIGIN
 
 log = logging.getLogger(__name__)
+UNDEFINED = (OperationalError,)
+try:
+    from psycopg2.errors import UndefinedTable
+
+    UNDEFINED = (UndefinedTable, *UNDEFINED)
+except ImportError:
+    pass
 
 
 class Dataset(object):
@@ -42,6 +50,18 @@ class Dataset(object):
         self._table.create(bind=self.store.engine, checkfirst=True)
         return self._table
 
+    def reset(self):
+        self._table = None
+
+    def drop(self):
+        log.debug("Dropping ftm-store: %s", self.table)
+        try:
+            self.table.drop(self.store.engine)
+            self.reset()
+        except UNDEFINED:
+            self.reset()
+            raise
+
     def delete(self, entity_id=None, fragment=None, origin=None):
         table = self.table
         stmt = table.delete()
@@ -51,12 +71,11 @@ class Dataset(object):
             stmt = stmt.where(table.c.fragment == fragment)
         if origin is not None:
             stmt = stmt.where(table.c.origin == origin)
-        self.store.engine.execute(stmt)
-
-    def drop(self):
-        log.debug("Dropping ftm-store: %s", self.table)
-        self.table.drop(self.store.engine)
-        self._table = None
+        try:
+            self.store.engine.execute(stmt)
+        except UNDEFINED:
+            self.reset()
+            raise
 
     def put(self, entity, fragment=None, origin=None):
         bulk = self.bulk()
@@ -86,6 +105,9 @@ class Dataset(object):
                 if ent.origin != NULL_ORIGIN:
                     data["origin"] = ent.origin
                 yield data
+        except Exception:
+            self.reset()
+            raise
         finally:
             conn.close()
 

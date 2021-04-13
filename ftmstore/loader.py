@@ -109,6 +109,7 @@ class BulkLoader(object):
             except EXCEPTIONS:
                 tx.rollback()
                 conn.close()
+                self.dataset.reset()
                 self.store.engine.dispose()
                 log.exception("Database error storing entities")
                 time.sleep(attempt * random.random())
