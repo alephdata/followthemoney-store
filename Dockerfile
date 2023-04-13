@@ -7,10 +7,6 @@ RUN apt-get -qq -y update \
 RUN apt-get -qq -y install pkg-config libicu-dev
 RUN pip install --no-binary=:pyicu: pyicu
 
-# Environment variables used for the SQLAlchemy 2.0 migration
-ENV SQLALCHEMY_WARN_20='1' \
-    PYTHONWARNINGS='always'
-
 COPY . /ftmstore
 WORKDIR /ftmstore
 
