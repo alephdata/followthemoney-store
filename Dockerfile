@@ -10,4 +10,4 @@ RUN pip install --no-binary=:pyicu: pyicu
 COPY . /ftmstore
 WORKDIR /ftmstore
 
-RUN pip3 install --no-cache-dir followthemoney SQLAlchemy postgres pytest
+RUN pip3 install --no-cache-dir -r requirements.txt

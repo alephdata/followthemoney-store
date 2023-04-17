@@ -8,9 +8,8 @@ services:
     tmpfs:
       - /tmp:mode=777
       - /data:mode=777
-    environment:
-      SQLALCHEMY_WARN_20: 1
-      PYTHONWARNINGS: always
+    depends_on:
+      - postgres
     volumes:
       - "./ftmstore:/ftmstore/ftmstore"
       - "./tests:/ftmstore/tests"

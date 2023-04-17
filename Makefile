@@ -4,7 +4,7 @@ build:
 db:
 	docker-compose up -d --remove-orphans postgres
 
-test: db
+test:
 	docker-compose run --rm ftmstore pytest -s tests
 
 stop:
