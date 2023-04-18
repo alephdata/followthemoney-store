@@ -1,0 +1,26 @@
+version: "3.2"
+
+services:
+  ftmstore:
+    build:
+      context: .
+    hostname: ftmstore
+    tmpfs:
+      - /tmp:mode=777
+      - /data:mode=777
+    depends_on:
+      - postgres
+    volumes:
+      - "./ftmstore:/ftmstore/ftmstore"
+      - "./tests:/ftmstore/tests"
+      - "./data:/ingestors/data"
+      - "./setup.py:/ftmstore/setup.py"
+
+  postgres:
+    image: postgres:10.0
+    ports:
+      - "127.0.0.1:15432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DATABASE: postgres

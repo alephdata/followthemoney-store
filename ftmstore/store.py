@@ -1,6 +1,6 @@
 from normality import slugify
 from sqlalchemy import create_engine, MetaData
-from sqlalchemy.engine.reflection import Inspector
+from sqlalchemy import inspect as sqlalchemy_inspect
 
 from ftmstore import settings
 from ftmstore.dataset import Dataset
@@ -22,14 +22,14 @@ class Store(object):
         # config.setdefault('pool_size', 1)
         self.engine = create_engine(database_uri, **config)
         self.is_postgres = self.engine.dialect.name == "postgresql"
-        self.meta = MetaData(self.engine)
+        self.meta = MetaData()
 
     def get(self, name, origin=NULL_ORIGIN):
         return Dataset(self, name, origin=origin)
 
     def all(self, origin=NULL_ORIGIN):
         prefix = slugify("%s " % self.prefix, sep="_") + "_"
-        inspect = Inspector.from_engine(self.engine)
+        inspect = sqlalchemy_inspect(self.engine)
         for table in inspect.get_table_names():
             if table.startswith(prefix):
                 name = table[len(prefix) :]

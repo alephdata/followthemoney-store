@@ -31,8 +31,7 @@ jobs:
           pip install coverage wheel pytest
           pip install -e ".[postgresql]"
       - name: Run the tests
-        run: |
-          pytest
+        run: make test
       - name: Build a distribution
         run: |
           python setup.py sdist bdist_wheel

@@ -3,7 +3,6 @@ from setuptools import setup, find_packages
 with open("README.md") as f:
     long_description = f.read()
 
-
 setup(
     name="followthemoney-store",
     version="3.0.3",
@@ -27,7 +26,7 @@ setup(
     packages=find_packages(exclude=["ez_setup", "tests"]),
     include_package_data=True,
     zip_safe=True,
-    install_requires=["followthemoney>=1.31.1", "SQLAlchemy>=1.3.1"],
+    install_requires=[],
     extras_require={"postgresql": ["psycopg2-binary>=2.7"]},
     tests_require=[],
     entry_points={"followthemoney.cli": ["store = ftmstore.cli:cli"]},

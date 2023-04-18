@@ -1,6 +1,6 @@
 from ftmstore import init, settings
 
-settings.DATABASE_URI = "postgresql://postgres@localhost:5432"
+settings.DATABASE_URI = "postgresql://postgres:postgres@postgres:5432/postgres"
 # settings.DATABASE_URI = "postgresql://aleph:aleph@localhost:15432/aleph"
 
 
@@ -40,5 +40,5 @@ def test_postgres():
     assert len(list(dataset.iterate(entity_id="key1"))) == 1
     assert len(list(dataset.fragments(entity_ids="key1"))) == 2
 
-    dataset.table.drop()
+    dataset.drop()
     dataset.store.close()

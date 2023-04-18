@@ -72,7 +72,9 @@ class Dataset(object):
         if origin is not None:
             stmt = stmt.where(table.c.origin == origin)
         try:
-            self.store.engine.execute(stmt)
+            with self.store.engine.connect() as conn:
+                conn.execute(stmt)
+                conn.commit()
         except UNDEFINED:
             self.reset()
             raise
@@ -165,8 +167,11 @@ class Dataset(object):
         return self.iterate()
 
     def __len__(self):
-        q = select([func.count(distinct(self.table.c.id))])
-        return self.store.engine.execute(q).scalar()
+        q = select(func.count(distinct(self.table.c.id)))
+        with self.store.engine.connect() as conn:
+            res = conn.execute(q)
+        
+        return res.scalar()
 
     def __repr__(self):
         return "<Dataset(%r, %r)>" % (self.store, self.name)
