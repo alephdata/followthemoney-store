@@ -20,7 +20,7 @@ class Store(object):
         self.prefix = prefix
         self.database_uri = database_uri
         # config.setdefault('pool_size', 1)
-        self.engine = create_engine(database_uri, **config)
+        self.engine = create_engine(database_uri, future=True, **config)
         self.is_postgres = self.engine.dialect.name == "postgresql"
         self.meta = MetaData()
 
