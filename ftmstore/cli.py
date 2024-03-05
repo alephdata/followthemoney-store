@@ -28,11 +28,11 @@ def write_stream(dataset, file, origin=NULL_ORIGIN):
 
 
 def iterate_stream(dataset, file, entity_id=None):
-    from followthemoney.cli.util import write_object
+    from followthemoney.cli.util import write_entity
 
     for entity in dataset.iterate(entity_id=entity_id):
         log.debug("[%s]: %s", entity.id, entity.caption)
-        write_object(file, entity)
+        write_entity(file, entity)
 
 
 @click.group(help="Store FollowTheMoney object data")
