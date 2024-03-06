@@ -5,33 +5,13 @@ on: [push]
 jobs:
   python:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:10.8
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
     steps:
       - uses: actions/checkout@v1
       - name: Show ref
         run: |
           echo "$GITHUB_REF"
-      - name: Set up Python
-        uses: actions/setup-python@v1
-        with:
-          python-version: "3.x"
-      - name: Install dependencies
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          sudo apt-get install libleveldb-dev
-          pip install coverage wheel pytest
-          pip install -e ".[postgresql]"
       - name: Run the tests
-        run: make test
+        run: make build db test
       - name: Build a distribution
         run: |
           python setup.py sdist bdist_wheel
