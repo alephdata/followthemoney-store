@@ -33,3 +33,6 @@ def test_input_output():
         assert len(f.readlines()) == number_of_entities
 
     output_file.unlink()
+
+    dataset.drop()
+    dataset.store.close()
