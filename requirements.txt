@@ -5,4 +5,4 @@ SQLAlchemy==2.0.29
 postgres==4.0
 
 # Testing dependencies
-pytest==7.3.1
+pytest==8.1.1
