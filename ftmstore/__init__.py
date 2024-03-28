@@ -6,7 +6,7 @@ from ftmstore.dataset import Dataset
 from ftmstore.utils import NULL_ORIGIN
 
 
-__version__ = "3.0.6"
+__version__ = "3.1.0"
 __all__ = ["Dataset", "Store", "get_store", "get_dataset"]
 
 
