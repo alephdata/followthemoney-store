@@ -9,30 +9,9 @@ from followthemoney.cli.cli import cli as main
 from ftmstore import get_dataset
 from ftmstore.settings import DATABASE_URI
 from ftmstore.store import Store
-from ftmstore.utils import NULL_ORIGIN
+from ftmstore.utils import NULL_ORIGIN, write_stream, iterate_stream
 
 log = logging.getLogger("ftmstore")
-
-
-def write_stream(dataset, file, origin=NULL_ORIGIN):
-    bulk = dataset.bulk()
-    for idx in count(1):
-        line = file.readline()
-        if not line:
-            break
-        entity = json.loads(line)
-        bulk.put(entity, fragment=str(idx), origin=origin)
-        if idx % 10000 == 0:
-            log.info("Write [%s]: %s entities", dataset.name, idx)
-    bulk.flush()
-
-
-def iterate_stream(dataset, file, entity_id=None):
-    from followthemoney.cli.util import write_object
-
-    for entity in dataset.iterate(entity_id=entity_id):
-        log.debug("[%s]: %s", entity.id, entity.caption)
-        write_object(file, entity)
 
 
 @click.group(help="Store FollowTheMoney object data")
@@ -59,7 +38,7 @@ def write(db, dataset, infile, origin):
 @cli.command("iterate", help="Iterate entities")
 @click.option("--db", metavar="URI", default=DATABASE_URI, show_default=True)
 @click.option("-d", "--dataset", required=True)
-@click.option("-o", "--outfile", type=click.File("w"), default="-")
+@click.option("-o", "--outfile", type=click.File("w+b"), default="-")
 def iterate(db, dataset, outfile):
     dataset = get_dataset(dataset, database_uri=db)
     try:
@@ -70,7 +49,7 @@ def iterate(db, dataset, outfile):
 
 @cli.command("aggregate", help="Combination of write and iterate.")
 @click.option("-i", "--infile", type=click.File("r"), default="-")
-@click.option("-o", "--outfile", type=click.File("w"), default="-")
+@click.option("-o", "--outfile", type=click.File("w+b"), default="-")
 def aggregate(infile, outfile):
     dataset = get_dataset("aggregate_%s" % uuid4().hex)
     try:

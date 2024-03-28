@@ -29,4 +29,5 @@ def test_sqlite():
     assert len(list(dataset.iterate(entity_id="key3"))) == 1
     assert len(dataset.store) == 1
 
+    dataset.drop()
     dataset.store.close()

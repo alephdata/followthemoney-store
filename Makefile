@@ -9,3 +9,6 @@ test:
 
 stop:
 	docker-compose down --remove-orphans
+
+dist:
+	docker-compose run --rm ftmstore python3 setup.py sdist bdist_wheel
