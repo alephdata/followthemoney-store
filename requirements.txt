@@ -1,7 +1,7 @@
 # Dependencies maintained by OCCRP
 followthemoney==3.5.9
 
-SQLAlchemy==2.0.9
+SQLAlchemy==2.0.29
 postgres==4.0
 
 # Testing dependencies
