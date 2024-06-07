@@ -1,5 +1,5 @@
 # Dependencies maintained by OCCRP
-followthemoney==3.5.9
+followthemoney==3.6.3
 
 SQLAlchemy==2.0.29
 postgres==4.0
